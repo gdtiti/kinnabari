@@ -1,0 +1,11 @@
+// This file is part of Kinnabari.
+// Copyright 2011 Sergey Chaban <sergey.chaban@gmail.com>
+// Released under the terms of Version 3 of the GNU General Public License.
+// See LICENSE.txt for details.
+
+#include "xform.h"
+#include "shadow.h"
+
+void main(VTX vtx, out float4 cpos : POSITION, out RECV_PIX pix : TEXCOORD) {
+	cpos = Recv_xform(vtx, Get_wmtx_skin(vtx), pix);
+}
