@@ -1,0 +1,1 @@
+/O2 /Oy /GS- /arch:SSE2 /fp:fast /Fa$(PROJ_NAME).lst /I%DX_PATH%\Include
