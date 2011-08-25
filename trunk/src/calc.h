@@ -81,6 +81,12 @@
 #	define D_VEC_128I(_v) D_M128I(_v)
 #endif
 
+#if D_KISS
+#	define D_V4_SHUFFLE(_v, _ix, _iy, _iz, _iw) V4_set(V4_at(_v, _ix), V4_at(_v, _iy), V4_at(_v, _iz), V4_at(_v, _iw))
+#else
+#	define D_V4_SHUFFLE(_v, _ix, _iy, _iz, _iw) _mm_shuffle_ps(_v, _v, (_ix)|((_iy)<<2)|((_iz)<<4)|((_iw)<<6))
+#endif
+
 #define D_MTX_POS(_name) union {QMTX _name; struct {float sr_mtx[3][4]; UVEC pos;};}
 
 typedef float VEC[3];
@@ -165,6 +171,7 @@ QVEC V4_load(float* p);
 QVEC V4_zero(void);
 QVEC V4_set_w0(QVEC v);
 QVEC V4_set_w1(QVEC v);
+QVEC V4_set_w(QVEC v, float w);
 QVEC V4_scale(QVEC v, float s);
 QVEC V4_normalize(QVEC v);
 QVEC V4_add(QVEC a, QVEC b);
@@ -209,6 +216,7 @@ QVEC MTX_calc_qvec(MTX m, QVEC v);
 QVEC MTX_calc_qpnt(MTX m, QVEC v);
 QVEC MTX_apply(MTX m, QVEC v);
 
+QVEC QUAT_from_axis_angle(QVEC axis, float ang);
 QVEC QUAT_from_mtx(MTX m);
 QVEC QUAT_get_vec_x(QVEC q);
 QVEC QUAT_get_vec_y(QVEC q);
@@ -216,6 +224,7 @@ QVEC QUAT_get_vec_z(QVEC q);
 void QUAT_get_mtx(QVEC q, MTX m);
 QVEC QUAT_normalize(QVEC q);
 QVEC QUAT_mul(QVEC q, QVEC b);
+QVEC QUAT_apply(QVEC q, QVEC v);
 QVEC QUAT_lerp(QVEC a, QVEC b, float bias);
 QVEC QUAT_slerp(QVEC a, QVEC b, float bias);
 
