@@ -211,6 +211,17 @@ QVEC V4_set_w1(QVEC v) {
 #endif
 }
 
+QVEC V4_set_w(QVEC v, float w) {
+#if D_KISS
+	UVEC v0;
+	v0.qv = v;
+	v0.w = w;
+	return v0.qv;
+#else
+	return _mm_shuffle_ps(v, _mm_unpackhi_ps(v, _mm_set1_ps(w)), _MM_SHUFFLE(3, 0, 1, 0));
+#endif
+}
+
 QVEC V4_scale(QVEC v, float s) {
 #if D_KISS
 	UVEC v0;
@@ -920,6 +931,12 @@ QVEC MTX_apply(MTX m, QVEC v) {
 }
 
 
+QVEC QUAT_from_axis_angle(QVEC axis, float ang) {
+	float sc[2];
+	SinCos(ang*0.5f, sc);
+	return V4_mul(V4_set_w1(V4_normalize(axis)), V4_set(sc[0], sc[0], sc[0], sc[1]));
+}
+
 QVEC QUAT_from_mtx(MTX m) {
 	float s, x, y, z, w;
 	float trace = m[0][0] + m[1][1] + m[2][2];
@@ -1048,6 +1065,19 @@ QVEC QUAT_mul(QVEC a, QVEC b) {
 	t2 = _mm_sub_ps(_mm_sub_ps(t2, t3), t3);
 	return _mm_add_ps(t1, t2);
 #endif
+}
+
+QVEC QUAT_apply(QVEC q, QVEC v) {
+	float w = V4_at(q, 3);
+	float ww = D_SQ(w);
+	float d = V4_dot4(q, V4_set_w0(v));
+	QVEC tv = V4_sub(
+		V4_add(V4_scale(v, ww), V4_scale(q, d)),
+		V4_scale(V4_sub(
+			V4_mul(D_V4_SHUFFLE(v, 1, 2, 0, 0), D_V4_SHUFFLE(q, 2, 0, 1, 0)),
+			V4_mul(D_V4_SHUFFLE(v, 2, 0, 1, 0), D_V4_SHUFFLE(q, 1, 2, 0, 0))), w));
+	tv = V4_sub(V4_scale(tv, 2.0f), v);
+	return V4_set_w(tv, V4_at(v, 3));
 }
 
 QVEC QUAT_lerp(QVEC a, QVEC b, float bias) {
