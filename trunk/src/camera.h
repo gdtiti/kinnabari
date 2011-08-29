@@ -52,6 +52,17 @@ typedef struct _FRUSTUM {
 	GEOM_PLANE pln[6];
 } FRUSTUM;
 
+typedef struct _CAM_CTRL {
+	UVEC pos_offs;
+	UVEC tgt_offs;
+	float t;
+	float dt;
+	float ry;
+	float dist_s;
+	float dist_t;
+	sys_uint flg;
+} CAM_CTRL;
+
 typedef struct _CAMERA {
 	QMTX mtx_view;
 	QMTX mtx_view_i;
@@ -60,7 +71,9 @@ typedef struct _CAMERA {
 	UVEC pos;
 	UVEC tgt;
 	UVEC up;
+	UVEC prev_pos;
 	FRUSTUM frustum;
+	CAM_CTRL ctrl;
 	float aspect;
 	float fovy;
 	float znear;
@@ -83,5 +96,5 @@ D_EXTERN_FUNC void CAM_apply(CAMERA* pCam);
 D_EXTERN_FUNC int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox);
 D_EXTERN_FUNC int CAM_cull_box_ex(CAMERA* pCam, GEOM_AABB* pBox);
 D_EXTERN_FUNC void CAM_load_data(CAMERA* pCam, const char* fname_kfr, const char* fname_lane);
-D_EXTERN_FUNC void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn);
+D_EXTERN_FUNC void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn, float heading);
 

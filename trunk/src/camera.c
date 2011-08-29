@@ -23,15 +23,32 @@
 #include "util.h"
 #include "anim.h"
 #include "render.h"
+#include "material.h"
 #include "camera.h"
+#include "obstacle.h"
+#include "room.h"
 
 CAMERA g_cam;
+
+static void Cam_ctrl_init(CAMERA* pCam) {
+	CAM_CTRL* pCtrl = &pCam->ctrl;
+	pCtrl->pos_offs.qv = V4_set_vec(-0.4f, 1.8f, -3.2f);
+	pCtrl->tgt_offs.qv = V4_set_vec(0.0f, 0.8f, 0.0f);
+	pCtrl->ry = 0.0f;
+	pCtrl->t = 0.0f;
+	pCtrl->dt = 0.0f;
+	pCtrl->dist_s = 0.93f;
+	pCtrl->dist_t = 0.0f;
+	pCtrl->flg = 0;
+}
 
 void CAM_init(CAMERA* pCam) {
 	pCam->aspect = 320.0f / 240.0f;
 	CAM_set_zoom(pCam, 50.0f, 41.5f);
 	CAM_set_z_planes(pCam, 0.1f, 1000.0f);
 	CAM_set_view(pCam, V4_set_pnt(-1.5f, 1.25f, 2.75f), V4_set_pnt(0.0f, 0.8f, 0.0f), V4_set_vec(0.0f, 1.0f, 0.0f));
+	pCam->prev_pos.qv = pCam->pos.qv;
+	Cam_ctrl_init(pCam);
 	CAM_update(pCam);
 }
 
@@ -259,7 +276,110 @@ static int Check_lane(LANE_VTX* pVtx, int nb_pol, QVEC p0, QVEC p1, UVEC* pUV) {
 	return 0;
 }
 
-void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn) {
+static QVEC Mk_rot_quat(QVEC a, QVEC b) {
+	QVEC q = V4_load(g_identity[3]);
+	if (!V4_same(q, b)) {
+		QVEC v = V4_cross(a, b);
+		if (V4_mag2(v) > 1e-8f) {
+			float d;
+			v = V4_normalize(v);
+			d = V4_dot(a, b);
+			if (d != 1.0f) {
+				float s = sqrtf((1.0f - d) * 0.5f);
+				float c = sqrtf((1.0f + d) * 0.5f);
+				q = V4_set_w(V4_scale(v, s), c);
+			}
+		}
+	}
+	return q;
+}
+
+static QVEC Cam_check_floor(QVEC cam_pos) {
+	UVEC pos;
+	OBST_QUERY qry;
+
+	pos.qv = V4_set_w1(cam_pos);
+	qry.p0.qv = pos.qv;
+	qry.p0.y += 1.0f;
+	qry.p1.qv = pos.qv;
+	qry.p1.y -= 10.0f;
+	qry.mask = E_OBST_POLYATTR_FLOOR;
+	if (OBST_check(&g_room.obst, &qry)) {
+		const float min_h = 0.8f;
+		const float max_h = 1.8f;
+		pos.qv = cam_pos;
+		if (pos.y - qry.hit_pos.y < min_h) {
+			pos.y = qry.hit_pos.y + min_h;
+		}
+		if (pos.y - qry.hit_pos.y > max_h) {
+			pos.y = qry.hit_pos.y + max_h;
+		}
+	}
+	return pos.qv;
+}
+
+static void Cam_auto_ctrl(CAMERA* pCam, QVEC obj_pos, float heading) {
+	QVEC q;
+	QVEC v;
+	QVEC offs;
+	QVEC cam_pos;
+	QVEC cam_tgt;
+	CAM_CTRL* pCtrl = &pCam->ctrl;
+
+	q = QUAT_from_axis_angle(V4_load(g_identity[1]), pCtrl->ry);
+	q = V4_mul(q, V4_set(-1, -1, -1, 1));
+	offs = QUAT_apply(q, pCtrl->pos_offs.qv);
+	if (pCtrl->dist_t > 0.0f) {
+		pCtrl->dist_t -= 1e-2f;
+	} else {
+		pCtrl->dist_t = 0.0f;
+	}
+	offs = V4_scale(offs, pCtrl->dist_s + pCtrl->dist_t*0.25f);
+	q = QUAT_from_axis_angle(V4_load(g_identity[1]), heading);
+	v = QUAT_apply(q, offs);
+	cam_pos = V4_add(obj_pos, v);
+	q = QUAT_from_axis_angle(V4_load(g_identity[1]), heading - pCtrl->ry);
+	offs = QUAT_apply(q, pCtrl->tgt_offs.qv);
+	cam_tgt = V4_add(obj_pos, offs);
+	if (pCtrl->flg & 1) {
+		QVEC vnow = V4_normalize(V4_sub(pCam->pos.qv, obj_pos));
+		QVEC vnew = V4_normalize(V4_sub(cam_pos, obj_pos));
+		float d = V4_dot(vnow, vnew);
+		if (pCtrl->t == 0.0f) {
+			if (d < 1.0f) {
+				pCtrl->t = 1.0f;
+				pCtrl->dt = 1e-3f;
+			}
+		} else {
+			QVEC cvec = V4_cross(vnow, vnew);
+			if (V4_mag2(cvec) > 1e-8f && d < 1.0f) {
+				float l0, l1;
+				q = Mk_rot_quat(vnow, vnew);
+				q = QUAT_slerp(q, V4_load(g_identity[3]), pCtrl->t);
+				v = QUAT_apply(q, vnow);
+				pCtrl->t -= pCtrl->dt;
+				pCtrl->dt -= pCtrl->dt*0.05f;
+				vnew = V4_sub(cam_pos, obj_pos);
+				l0 = V4_mag(v);
+				l1 = V4_mag(vnew);
+				if (l0*l1 != 0.0f) {
+					v = V4_scale(v, l1/l0);
+					cam_pos = V4_add(obj_pos, v);
+				} else {
+					pCtrl->t = 0.0f;
+				}
+			} else {
+				pCtrl->t = 0.0f;
+			}
+		}
+	} else {
+		pCtrl->flg |= 1;
+	}
+	cam_pos = Cam_check_floor(cam_pos);
+	CAM_set_view(pCam, V4_set_w1(cam_pos), V4_set_w1(cam_tgt), V4_load(g_identity[1]));
+}
+
+void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn, float heading) {
 	UVEC p0;
 	UVEC p1;
 	UVEC uv;
@@ -273,9 +393,14 @@ void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn) {
 	float frame;
 	int i, n, nb_vtx, nb_pol, offs, lane_idx;
 
+	pCam->prev_pos.qv = V4_set_w1(pCam->pos.qv);
+	pLane = pCam->pLane_data;
+	if (!pLane) {
+		Cam_auto_ctrl(pCam, pos, heading);
+		return;
+	}
 	p0.qv = V4_set_w1(V4_add(pos, V4_set_vec(0.0f, offs_up, 0.0f)));
 	p1.qv = V4_set_w1(V4_sub(pos, V4_set_vec(0.0f, offs_dn, 0.0f)));
-	pLane = pCam->pLane_data;
 	n = pLane->nb_lane;
 	lane_idx = -1;
 	for (i = 0; i < n; ++i) {
@@ -312,6 +437,8 @@ void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn) {
 			}
 		}
 		CAM_set_view(pCam, cam_pos.qv, cam_tgt.qv, V4_load(g_identity[1]));
+	} else {
+		Cam_auto_ctrl(pCam, pos, heading);
 	}
 }
 
