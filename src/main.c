@@ -117,7 +117,7 @@ static void Draw() {
 
 	RDR_begin();
 	PLR_ctrl();
-	CAM_exec(&g_cam, g_pl.pAnm->move.pos.qv, 0.5f, 0.5f);
+	CAM_exec(&g_cam, g_pl.pMdl->pos.qv, 0.5f, 0.5f, g_pl.pAnm->move.heading);
 	CAM_update(&g_cam);
 	CAM_apply(&g_cam);
 
