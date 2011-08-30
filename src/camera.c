@@ -307,7 +307,6 @@ static QVEC Cam_check_floor(QVEC cam_pos) {
 	if (OBST_check(&g_room.obst, &qry)) {
 		const float min_h = 0.8f;
 		const float max_h = 1.8f;
-		pos.qv = cam_pos;
 		if (pos.y - qry.hit_pos.y < min_h) {
 			pos.y = qry.hit_pos.y + min_h;
 		}
