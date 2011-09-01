@@ -33,6 +33,13 @@ static D_FORCE_INLINE void SinCos(float rad, float res[2]) {
 	res[0] = sinf(rad);
 	res[1] = cosf(rad);
 #else
+#	if defined (__GNUC__)
+	asm (
+		"fsincos"
+		: "=t" (res[1]), "=u" (res[0])
+		: "0" (rad)
+	);
+#	else
 	__asm {
 		fld rad
 		mov eax, res
@@ -40,6 +47,7 @@ static D_FORCE_INLINE void SinCos(float rad, float res[2]) {
 		fstp dword ptr [eax + 4]
 		fstp dword ptr [eax]
 	}
+#	endif
 #endif
 }
 

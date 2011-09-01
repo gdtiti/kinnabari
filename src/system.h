@@ -113,8 +113,8 @@
 #	if defined(__GNUC__)
 		typedef long long sys_i64;
 		typedef unsigned long long sys_ui64;
-		typedef int          sys_i128 __attribute__(( mode(TI), aligned(16) ));
-		typedef unsigned int sys_ui128 __attribute__(( mode(TI), aligned(16) ));
+		typedef struct _SYS_I128STRUC {sys_ui64 lo; sys_i64 hi;} sys_i128 __attribute__((aligned(16)));
+		typedef struct _SYS_UI128STRUC {sys_ui64 lo; sys_ui64 hi;} sys_ui128 __attribute__((aligned(16)));
 #	else
 		/* little-endian */
 		typedef struct _SYS_I64STRUC {sys_ui32 lo; sys_i32_t hi;} sys_i64;
