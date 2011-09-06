@@ -29,7 +29,7 @@ QMTX g_identity = {
 };
 
 static D_FORCE_INLINE void SinCos(float rad, float res[2]) {
-#if D_KISS
+#if D_KISS || defined(_WIN64)
 	res[0] = sinf(rad);
 	res[1] = cosf(rad);
 #else
@@ -432,6 +432,31 @@ QVEC V4_abs(QVEC v) {
 #else
 	static D_DATA_ALIGN16(int abs_mask[4]) = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
 	return _mm_and_ps(v, _mm_load_ps((float*)abs_mask));
+#endif
+}
+
+QVEC V4_inv(QVEC v) {
+#if D_KISS
+	UVEC v0;
+	UVEC v1;
+	int i;
+	v1.qv = v;
+	for (i = 0; i < 4; ++i) {v0.f[i] = 1.0f/v1.f[i];}
+	return v0.qv;
+#else
+	__m128i ione = _mm_insert_epi16(_mm_setzero_si128(), 0x3F80, 1);
+	__m128 one = D_M128(ione);
+	return _mm_div_ps(_mm_shuffle_ps(one, one, 0), v);
+#endif
+}
+
+QVEC V4_rcp(QVEC v) {
+#if D_KISS
+	return V4_inv(v);
+#else
+	__m128 tmp = _mm_rcp_ps(v);
+	__m128 tmp2 = _mm_mul_ps(tmp, tmp);
+	return _mm_sub_ps(_mm_add_ps(tmp, tmp), _mm_mul_ps(v, tmp2));
 #endif
 }
 
