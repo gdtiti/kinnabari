@@ -191,6 +191,8 @@ float V4_dist2(QVEC v0, QVEC v1);
 QVEC V4_min(QVEC a, QVEC b);
 QVEC V4_max(QVEC a, QVEC b);
 QVEC V4_abs(QVEC v);
+QVEC V4_inv(QVEC v);
+QVEC V4_rcp(QVEC v);
 int V4_same(QVEC a, QVEC b);
 int V4_same_xyz(QVEC a, QVEC b);
 void V4_print(QVEC v);
