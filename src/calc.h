@@ -195,6 +195,7 @@ QVEC V4_inv(QVEC v);
 QVEC V4_rcp(QVEC v);
 int V4_same(QVEC a, QVEC b);
 int V4_same_xyz(QVEC a, QVEC b);
+int V4_eq(QVEC a, QVEC b);
 void V4_print(QVEC v);
 
 void MTX_cpy(MTX mdst, MTX msrc);
@@ -229,6 +230,22 @@ QVEC QUAT_mul(QVEC q, QVEC b);
 QVEC QUAT_apply(QVEC q, QVEC v);
 QVEC QUAT_lerp(QVEC a, QVEC b, float bias);
 QVEC QUAT_slerp(QVEC a, QVEC b, float bias);
+
+sys_ui32 CLR_f2i(QVEC cv);
+QVEC CLR_i2f(sys_ui32 ci);
+QVEC CLR_RGB_to_HSV(QVEC qrgb);
+QVEC CLR_HSV_to_RGB(QVEC qhsv);
+QVEC CLR_RGB_to_YCbCr(QVEC qrgb);
+QVEC CLR_YCbCr_to_RGB(QVEC qybr);
+QVEC CLR_RGB_to_XYZ(QVEC qrgb, MTX* pMtx);
+QVEC CLR_XYZ_to_RGB(QVEC qxyz, MTX* pMtx);
+QVEC CLR_XYZ_to_Lab(QVEC qxyz, MTX* pMtx);
+QVEC CLR_Lab_to_XYZ(QVEC qlab, MTX* pMtx);
+QVEC CLR_RGB_to_Lab(QVEC qxyz, MTX* pMtx);
+QVEC CLR_Lab_to_RGB(QVEC qlab, MTX* pRGB2XYZ, MTX* pXYZ2RGB);
+float CLR_get_luma(QVEC qrgb);
+float CLR_get_luminance(QVEC qrgb, MTX* pMtx);
+void CLR_calc_XYZ_transform(MTX* pRGB2XYZ, MTX* pXYZ2RGB, QVEC* pPrim, QVEC* pWhite);
 
 void SH_clear_ch(SH_CHANNEL* pChan);
 void SH_clear(SH_COEF* pCoef);
