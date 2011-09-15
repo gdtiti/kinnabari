@@ -488,6 +488,23 @@ int V4_same_xyz(QVEC a, QVEC b) {
 #endif
 }
 
+int V4_eq(QVEC a, QVEC b) {
+#if D_KISS
+	UVEC v1;
+	UVEC v2;
+	int i, mask;
+	v1.qv = a;
+	v2.qv = b;
+	mask = 0;
+	for (i = 0; i < 4; ++i) {
+		if (v1.f[i] == v2.f[i]) mask |= 1<<i;
+	}
+	return mask;
+#else
+	return _mm_movemask_ps(_mm_cmpeq_ps(a, b));
+#endif
+}
+
 void V4_print(QVEC v) {
 	UVEC tv;
 	tv.qv = v;
@@ -1137,6 +1154,239 @@ QVEC QUAT_slerp(QVEC a, QVEC b, float bias) {
 		bf *= bias;
 	}
 	return V4_combine(a, af, b, bf);
+}
+
+
+sys_ui32 CLR_f2i(QVEC cv) {
+	UVEC tv;
+	tv.qv = V4_scale(V4_max(V4_min(cv, V4_fill(1.0f)), V4_zero()), 255.0f);
+	return (sys_ui32)(((((int)tv.a) & 0xFF)<<24) | ((((int)tv.r) & 0xFF)<<16) | ((((int)tv.g) & 0xFF)<<8) | (((int)tv.b) & 0xFF));
+}
+
+QVEC CLR_i2f(sys_ui32 ci) {
+	UVEC cv;
+	cv.r = (float)((ci>>16) & 0xFF);
+	cv.g = (float)((ci>>8) & 0xFF);
+	cv.b = (float)(ci & 0xFF);
+	cv.a = (float)((ci>>24) & 0xFF);
+	return V4_scale(cv.qv, 1.0f/255);
+}
+
+QVEC CLR_RGB_to_HSV(QVEC qrgb) {
+	UVEC rgb;
+	float h, s, v, cmin, cmax, diff;
+
+	rgb.qv = qrgb;
+	cmin = F_min(F_min(rgb.r, rgb.g), rgb.b);
+	cmax = F_max(F_max(rgb.r, rgb.g), rgb.b);
+	diff = cmax - cmin;
+	h = 0.0f;
+	s = cmax > 0.0f ? diff / cmax : 0.0f;
+	v = cmax;
+	if (diff > 0.0f) {
+#if D_KISS
+		if (cmax == rgb.r) {
+			h = (rgb.g - rgb.b) / diff;
+		} else if (cmax == rgb.g) {
+			h = ((rgb.b - rgb.r) / diff) + 2.0f;
+		} else {
+			h = ((rgb.r - rgb.g) / diff) + 4.0f;
+		}
+#else
+		UVEC hv;
+		int msk;
+		static QVEC hv_add = {0.0f, 2.0f, 4.0f, 0.0f};
+		hv.qv = V4_add(V4_scale(V4_sub(D_V4_SHUFFLE(qrgb, 1, 2, 0, 0), D_V4_SHUFFLE(qrgb, 2, 0, 1, 0)), 1.0f/diff), hv_add);
+		msk = V4_eq(qrgb, V4_fill(cmax)) & 7;
+		h = hv.f[(0x1210>>(msk<<1)) & 3];
+#endif
+	}
+	h /= 6.0f;
+	if (h < 0.0f) {
+		h += 1.0f;
+	}
+	return V4_set(h, s, v, 0.0f);
+}
+
+QVEC CLR_HSV_to_RGB(QVEC qhsv) {
+	UVEC hsv;
+	QVEC tv;
+	int ih;
+	float fh;
+	float h, s, v;
+
+	hsv.qv = qhsv;
+	h = hsv.x;
+	s = hsv.y;
+	v = hsv.z;
+	if (s) {
+		if (h >= 1.0f) {
+			h = h - (int)h;
+		}
+		h *= 6.0f;
+		ih = (int)h;
+		fh = h - ih;
+		tv = V4_mul(V4_fill(v), V4_sub(V4_fill(1.0f), V4_set(s, s*fh, s*(1.0f-fh), 0.0f)));
+		switch (ih) {
+			case 0:
+				tv = D_V4_SHUFFLE(tv, 3, 2, 0, 3);
+				break;
+			case 1:
+				tv = D_V4_SHUFFLE(tv, 1, 3, 0, 3);
+				break;
+			case 2:
+				tv = D_V4_SHUFFLE(tv, 0, 3, 2, 3);
+				break;
+			case 3:
+				tv = D_V4_SHUFFLE(tv, 0, 1, 3, 3);
+				break;
+			case 4:
+				tv = D_V4_SHUFFLE(tv, 2, 0, 3, 3);
+				break;
+			case 5:
+				tv = D_V4_SHUFFLE(tv, 3, 0, 1, 3);
+				break;
+			default:
+				tv = V4_zero();
+				break;
+		}
+	} else {
+		tv = V4_fill(v);
+	}
+	return V4_set_w1(tv);
+}
+
+QVEC CLR_RGB_to_YCbCr(QVEC qrgb) {
+	static QVEC vb = {-0.169f, -0.331f, 0.5f, 0.0f};
+	static QVEC vr = {0.5f, -0.419f, -0.081f, 0.0f};
+	return V4_set_vec(CLR_get_luma(qrgb), V4_dot4(qrgb, vb), V4_dot4(qrgb, vr));
+}
+
+QVEC CLR_YCbCr_to_RGB(QVEC qybr) {
+	UVEC c;
+	float Y, Cb, Cr, r, g, b;
+	c.qv = qybr;
+	Y = c.x;
+	Cb = c.y;
+	Cr = c.z;
+	r = Y + Cr*1.402f;
+	g = Y - Cr*0.714f - Cb*0.344f;
+	b = Y + Cb*1.772f;
+	return V4_set_pnt(r, g, b);
+}
+
+QVEC CLR_RGB_to_XYZ(QVEC qrgb, MTX* pMtx) {
+	static QMTX mtx709 = {
+		{0.412453f, 0.212671f, 0.019334f, 0.0f},
+		{0.357580f, 0.715160f, 0.119193f, 0.0f},
+		{0.180423f, 0.072169f, 0.950227f, 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
+	if (!pMtx) pMtx = &mtx709;
+	return MTX_calc_qvec(*pMtx, qrgb);
+}
+
+QVEC CLR_XYZ_to_RGB(QVEC qxyz, MTX* pMtx) {
+	static QMTX mtx709 = {
+		{ 3.240479f, -0.969256f,  0.055648f, 0.0f},
+		{-1.537150f,  1.875992f, -0.204043f, 0.0f},
+		{-0.498535f,  0.041556f,  1.057311f, 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
+	if (!pMtx) pMtx = &mtx709;
+	return MTX_calc_qvec(*pMtx, qxyz);
+}
+
+static float XYZ2Lab_sub(float x) {
+	return x <= 0.008856f ? 7.787f*x + (16.0f/116) : powf(x, 1.0f/3);
+}
+
+QVEC CLR_XYZ_to_Lab(QVEC qxyz, MTX* pMtx) {
+	UVEC xyz;
+	float lx, ly, lz;
+	QVEC white = V4_set_w1(CLR_RGB_to_XYZ(V4_fill(1.0f), pMtx));
+	xyz.qv = V4_mul(qxyz, V4_inv(white));
+	lx = XYZ2Lab_sub(xyz.x);
+	ly = XYZ2Lab_sub(xyz.y);
+	lz = XYZ2Lab_sub(xyz.z);
+	return V4_set_vec(116.0f*ly - 16.0f, 500.0f*(lx-ly), 200.0f*(ly-lz));
+}
+
+static float Lab2XYZ_sub(float x) {
+	return x <= 0.206893f ? (x - (16.0f/116))/7.787f: D_CB(x);
+}
+
+QVEC CLR_Lab_to_XYZ(QVEC qlab, MTX* pMtx) {
+	UVEC Lab;
+	QVEC white;
+	float L, a, b, ly;
+
+	Lab.qv = qlab;
+	white = CLR_RGB_to_XYZ(V4_fill(1.0f), pMtx);
+	L = Lab.x;
+	a = Lab.y;
+	b = Lab.z;
+	ly = (L + 16.0f) / 116.0f;
+	return V4_mul(V4_set_vec(Lab2XYZ_sub(a/500.0f + ly), Lab2XYZ_sub(ly), Lab2XYZ_sub(-b/200.0f + ly)), white);
+}
+
+QVEC CLR_RGB_to_Lab(QVEC qrgb, MTX* pMtx) {
+	return CLR_XYZ_to_Lab(CLR_RGB_to_XYZ(qrgb, pMtx), pMtx);
+}
+
+QVEC CLR_Lab_to_RGB(QVEC qlab, MTX* pRGB2XYZ, MTX* pXYZ2RGB) {
+	return CLR_XYZ_to_RGB(CLR_Lab_to_XYZ(qlab, pRGB2XYZ), pXYZ2RGB);
+}
+
+float CLR_get_luma(QVEC qrgb) {
+	static QVEC luma601 = {0.299f, 0.587f, 0.114f, 0.0f};
+	return V4_dot4(qrgb, luma601);
+}
+
+float CLR_get_luminance(QVEC qrgb, MTX* pMtx) {
+	static QVEC Y709 = {0.212671f, 0.71516f, 0.072169f, 0.0f};
+	QVEC Yvec;
+	if (pMtx) {
+		Yvec = V4_set_vec((*pMtx)[0][1], (*pMtx)[1][1], (*pMtx)[2][1]);
+	} else {
+		Yvec = Y709;
+	}
+	return V4_dot4(qrgb, Yvec);
+}
+
+void CLR_calc_XYZ_transform(MTX* pRGB2XYZ, MTX* pXYZ2RGB, QVEC* pPrim, QVEC* pWhite) {
+	QMTX im;
+	QMTX tm;
+	QMTX cm;
+	QVEC wvec;
+	QVEC jvec;
+	static QVEC prim709[3] = {
+		{0.640f, 0.330f, 0.030f, 0.0f}, /* Rxyz */
+		{0.300f, 0.600f, 0.100f, 0.0f}, /* Gxyz */
+		{0.150f, 0.060f, 0.790f, 0.0f}  /* Bxyz */
+	};
+	static QVEC D65 = {0.3127f, 0.3290f, 0.3582f, 0.0f};
+
+	if (!pPrim) pPrim = prim709;
+	if (!pWhite) pWhite = &D65;
+	wvec = V4_scale(*pWhite, 1.0f/V4_at(*pWhite, 1));
+	V4_store(cm[0], pPrim[0]);
+	V4_store(cm[1], pPrim[1]);
+	V4_store(cm[2], pPrim[2]);
+	V4_store(cm[3], V4_load(g_identity[3]));
+	MTX_invert(im, cm);
+	jvec = MTX_calc_qvec(im, wvec);
+	MTX_unit(tm);
+	tm[0][0] = V4_at(jvec, 0);
+	tm[1][1] = V4_at(jvec, 1);
+	tm[2][2] = V4_at(jvec, 2);
+	MTX_mul(tm, tm, cm);
+	if (pRGB2XYZ) {
+		MTX_cpy(*pRGB2XYZ, tm);
+	}
+	if (pXYZ2RGB) {
+		MTX_invert(*pXYZ2RGB, tm);
+	}
 }
 
 
