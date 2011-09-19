@@ -193,9 +193,15 @@ QVEC V4_max(QVEC a, QVEC b);
 QVEC V4_abs(QVEC v);
 QVEC V4_inv(QVEC v);
 QVEC V4_rcp(QVEC v);
+QVEC V4_sqrt(QVEC v);
 int V4_same(QVEC a, QVEC b);
 int V4_same_xyz(QVEC a, QVEC b);
 int V4_eq(QVEC a, QVEC b);
+int V4_ne(QVEC a, QVEC b);
+int V4_lt(QVEC a, QVEC b);
+int V4_le(QVEC a, QVEC b);
+int V4_gt(QVEC a, QVEC b);
+int V4_ge(QVEC a, QVEC b);
 void V4_print(QVEC v);
 
 void MTX_cpy(MTX mdst, MTX msrc);
