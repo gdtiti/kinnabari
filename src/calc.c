@@ -460,6 +460,19 @@ QVEC V4_rcp(QVEC v) {
 #endif
 }
 
+QVEC V4_sqrt(QVEC v) {
+#if D_KISS
+	UVEC v0;
+	UVEC v1;
+	int i;
+	v1.qv = v;
+	for (i = 0; i < 4; ++i) {v0.f[i] = sqrtf(v1.f[i]);}
+	return v0.qv;
+#else
+	return _mm_sqrt_ps(v);
+#endif
+}
+
 int V4_same(QVEC a, QVEC b) {
 #if D_KISS
 	UVEC v1;
@@ -488,28 +501,35 @@ int V4_same_xyz(QVEC a, QVEC b) {
 #endif
 }
 
-int V4_eq(QVEC a, QVEC b) {
 #if D_KISS
-	UVEC v1;
-	UVEC v2;
-	int i, mask;
-	v1.qv = a;
-	v2.qv = b;
-	mask = 0;
-	for (i = 0; i < 4; ++i) {
-		if (v1.f[i] == v2.f[i]) mask |= 1<<i;
-	}
-	return mask;
+#define D_V4_CMP(_op, _mn) \
+	UVEC v1; \
+	UVEC v2; \
+	int i, mask; \
+	v1.qv = a; \
+	v2.qv = b; \
+	mask = 0; \
+	for (i = 0; i < 4; ++i) { \
+		if (v1.f[i] _op v2.f[i]) mask |= 1<<i; \
+	} \
+	return mask
 #else
-	return _mm_movemask_ps(_mm_cmpeq_ps(a, b));
+#define D_V4_CMP(_op, _mn) return _mm_movemask_ps(_mm_cmp##_mn##_ps(a, b))
 #endif
-}
+
+int V4_eq(QVEC a, QVEC b) {D_V4_CMP(==, eq);}
+int V4_ne(QVEC a, QVEC b) {D_V4_CMP(!=, neq);}
+int V4_lt(QVEC a, QVEC b) {D_V4_CMP(<, lt);}
+int V4_le(QVEC a, QVEC b) {D_V4_CMP(<=, le);}
+int V4_gt(QVEC a, QVEC b) {D_V4_CMP(>, gt);}
+int V4_ge(QVEC a, QVEC b) {D_V4_CMP(>=, ge);}
 
 void V4_print(QVEC v) {
 	UVEC tv;
 	tv.qv = v;
 	SYS_log("<%.4f %.4f %.4f %.4f>", tv.x, tv.y, tv.z, tv.w);
 }
+
 
 void MTX_cpy(MTX mdst, MTX msrc) {
 #if D_KISS
