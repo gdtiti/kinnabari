@@ -36,7 +36,7 @@ void OBST_load(OBSTACLE* pObst, const char* name) {
 	}
 }
 
-QVEC Get_vtx(OBSTACLE* pObst, int idx) {
+static QVEC Get_vtx(OBSTACLE* pObst, int idx) {
 	UVEC3* pPnt = &pObst->pPnt[idx];
 	return V4_set(pPnt->x, pPnt->y, pPnt->z, 1.0f);
 }
