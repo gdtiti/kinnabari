@@ -1566,6 +1566,111 @@ int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox) {
 #endif
 }
 
+float GEOM_tri_dist2(QVEC pos, QVEC* pVtx) {
+	QVEC p = pos;
+	QVEC a = pVtx[0];
+	QVEC b = pVtx[1];
+	QVEC c = pVtx[2];
+	QVEC ab;
+	QVEC ac;
+	QVEC ap;
+	QVEC bp;
+	QVEC cp;
+	QVEC cb;
+	float d1, d2, d3, d4, d5, d6;
+	float va, vb, vc, dn, v, w;
+
+	ab = V4_sub(b, a);
+	ac = V4_sub(c, a);
+	ap = V4_sub(p, a);
+	d1 = V4_dot(ab, ap);
+	d2 = V4_dot(ac, ap);
+	if (d1 <= 0.0f && d2 <= 0.0f) {
+		return V4_mag2(ap);
+	}
+	bp = V4_sub(p, b);
+	d3 = V4_dot(ab, bp);
+	d4 = V4_dot(ac, bp);
+	if (d3 >= 0.0f && d4 <= d3) {
+		return V4_mag2(bp);
+	}
+	vc = d1*d4 - d3*d2;
+	if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+		v = d1 / (d1 - d3);
+		return V4_dist2(p, V4_add(a, V4_scale(ab, v)));
+	}
+	cp = V4_sub(p, c);
+	d5 = V4_dot(ab, cp);
+	d6 = V4_dot(ac, cp);
+	if (d6 >= 0.0f && d5 <= d6) {
+		return V4_mag2(cp);
+	}
+	vb = d5*d2 - d1*d6;
+	if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+		w = d2 / (d2 - d6);
+		return V4_dist2(p, V4_add(a, V4_scale(ac, w)));
+	}
+	va = d3*d6 - d5*d4;
+	if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+		w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+		cb = V4_sub(c, b);
+		return V4_dist2(p, V4_add(b, V4_scale(cb, w)));
+	}
+	dn = 1.0f / (va + vb + vc);
+	v = vb*dn;
+	w = vc*dn;
+	ab = V4_scale(ab, v);
+	ac = V4_scale(ac, w);
+	return V4_dist2(p, V4_add(a, V4_add(ab, ac)));
+}
+
+float GEOM_quad_dist2(QVEC pos, QVEC* pVtx) {
+	QVEC n;
+	QVEC v[4];
+	QVEC edge[4];
+	UVEC dv;
+	QVEC vlen;
+	UVEC ilen;
+	int i;
+
+	for (i = 0; i < 4; ++i) {
+		v[i] = V4_sub(pos, pVtx[i]);
+	}
+	for (i = 0; i < 4; ++i) {
+		edge[i] = V4_sub(pVtx[i<3 ? i+1 : 0], pVtx[i]);
+	}
+	n = V4_normalize(V4_cross(edge[0], V4_sub(pVtx[2], pVtx[0])));
+	for (i = 0; i < 4; ++i) {
+		dv.f[i] = V4_triple(edge[i], v[i], n);
+	}
+	if (V4_ge(dv.qv, V4_zero()) == 0xF) {
+		return D_SQ(V4_dot4(v[0], n));
+	}
+	if (fabsf(dv.f[3]) < 1e-6f) {
+		dv.f[3] = dv.f[2];
+		edge[3] = edge[2];
+	}
+	for (i = 0; i < 4; ++i) {
+		dv.f[i] = V4_mag2(edge[i]);
+	}
+	vlen = V4_sqrt(dv.qv);
+	ilen.qv = V4_inv(vlen);
+	for (i = 0; i < 4; ++i) {
+		edge[i] = V4_set_w0(V4_scale(edge[i], ilen.f[i]));
+	}
+	for (i = 0; i < 4; ++i) {
+		dv.f[i] = V4_dot4(v[i], edge[i]);
+	}
+	dv.qv = V4_max(V4_min(dv.qv, vlen), V4_zero());
+	for (i = 0; i < 4; ++i) {
+		edge[i] = V4_scale(edge[i], dv.f[i]);
+	}
+	for (i = 0; i < 4; ++i) {
+		v[i] = V4_add(pVtx[i], edge[i]);
+	}
+	return F_min(V4_dist2(pos, v[0]), F_min(V4_dist2(pos, v[1]), F_min(V4_dist2(pos, v[2]), V4_dist2(pos, v[3]))));
+}
+
 int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* pHit_nml) {
 	QVEC n;
 	QVEC dir;

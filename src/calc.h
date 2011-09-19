@@ -270,6 +270,8 @@ float SPL_overhauser(QVEC pvec, float t);
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
 int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
+float GEOM_tri_dist2(QVEC pos, QVEC* pVtx);
+float GEOM_quad_dist2(QVEC pos, QVEC* pVtx);
 int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* pHit_nml);
 int GEOM_seg_polyhedron_intersect(QVEC p0, QVEC p1, GEOM_PLANE* pPln, int n, QVEC* pRes);
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
