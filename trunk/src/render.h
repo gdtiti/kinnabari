@@ -321,6 +321,7 @@ D_EXTERN_DATA RDR_GPARAM g_rdr_param;
 
 D_EXTERN_FUNC void RDR_init(void* hWnd, int width, int height, int fullscreen);
 D_EXTERN_FUNC void RDR_reset(void);
+D_EXTERN_FUNC void RDR_init_thread_FPU(void);
 D_EXTERN_FUNC void RDR_begin(void);
 D_EXTERN_FUNC void RDR_exec(void);
 
