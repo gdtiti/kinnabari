@@ -202,6 +202,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\src\job.c"
+			>
+		</File>
+		<File
+			RelativePath=".\src\job.h"
+			>
+		</File>
+		<File
 			RelativePath=".\src\main.c"
 			>
 		</File>
