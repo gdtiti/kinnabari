@@ -58,6 +58,25 @@ static void Data_init() {
 	ROOM_init(0);
 }
 
+static void Wrk_init_func(JOB_WORKER* pWrk) {
+	struct {
+		DWORD  type;
+		LPCSTR pName;
+		DWORD  tid;
+		DWORD  flg;
+	} info;
+	static char* names[] = {"wrk0", "wrk1", "wrk2", "wrk3", "wrk4", "wrk5", "wrk6", "wrk7"};
+	SYS_log("Initializing worker %d\n", pWrk->id);
+	info.type = 0x1000;
+	info.pName = names[pWrk->id & 7];
+	info.tid = -1;
+	info.flg = 0;
+	__try {
+		RaiseException(0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info);
+	} __except(EXCEPTION_CONTINUE_EXECUTION) {}
+	RDR_init_thread_FPU();
+}
+
 static void Init() {
 	ATOM atom;
 	RECT rect;
@@ -98,6 +117,7 @@ static void Init() {
 			UpdateWindow(g_wk.hWnd);
 
 			RDR_init(g_wk.hWnd, g_wk.w, g_wk.h, FALSE);
+			JOB_sys_init(Wrk_init_func);
 			MTL_sys_init();
 			MDL_sys_init();
 
@@ -106,7 +126,6 @@ static void Init() {
 	}
 
 }
-
 
 static void Draw() {
 	static int ftime = 1000/60;
@@ -160,6 +179,7 @@ static void Loop() {
 static void Reset() {
 	MTL_sys_reset();
 	MDL_sys_reset();
+	JOB_sys_reset();
 	RDR_reset();
 }
 

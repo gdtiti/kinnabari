@@ -1,4 +1,5 @@
 #include "system.h"
+#include "job.h"
 #include "calc.h"
 #include "util.h"
 #include "anim.h"
