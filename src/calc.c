@@ -71,6 +71,7 @@ float F_max(float x, float y) {
 #endif
 }
 
+
 void VEC_cpy(VEC vdst, VEC vsrc) {
 	int i;
 	for (i = 0; i < 3; ++i) vdst[i] = vsrc[i];
@@ -119,6 +120,7 @@ float VEC_mag2(VEC v) {
 float VEC_mag(VEC v) {
 	return sqrtf(VEC_mag2(v));
 }
+
 
 void V4_store(float* p, QVEC v) {
 #if D_KISS
@@ -389,6 +391,14 @@ float V4_dist(QVEC v0, QVEC v1) {
 
 float V4_dist2(QVEC v0, QVEC v1) {
 	return V4_mag2(V4_sub(v1, v0));
+}
+
+QVEC V4_clamp(QVEC v, QVEC min, QVEC max) {
+	return V4_max(V4_min(v, max), min);
+}
+
+QVEC V4_saturate(QVEC v) {
+	return V4_clamp(v, V4_zero(), V4_fill(1.0f));
 }
 
 QVEC V4_min(QVEC a, QVEC b) {
@@ -1179,7 +1189,7 @@ QVEC QUAT_slerp(QVEC a, QVEC b, float bias) {
 
 sys_ui32 CLR_f2i(QVEC cv) {
 	UVEC tv;
-	tv.qv = V4_scale(V4_max(V4_min(cv, V4_fill(1.0f)), V4_zero()), 255.0f);
+	tv.qv = V4_scale(V4_saturate(cv), 255.0f);
 	return (sys_ui32)(((((int)tv.a) & 0xFF)<<24) | ((((int)tv.r) & 0xFF)<<16) | ((((int)tv.g) & 0xFF)<<8) | (((int)tv.b) & 0xFF));
 }
 
@@ -1661,7 +1671,7 @@ float GEOM_quad_dist2(QVEC pos, QVEC* pVtx) {
 	for (i = 0; i < 4; ++i) {
 		dv.f[i] = V4_dot4(v[i], edge[i]);
 	}
-	dv.qv = V4_max(V4_min(dv.qv, vlen), V4_zero());
+	dv.qv = V4_clamp(dv.qv, V4_zero(), vlen);
 	for (i = 0; i < 4; ++i) {
 		edge[i] = V4_scale(edge[i], dv.f[i]);
 	}
