@@ -188,6 +188,8 @@ float V4_mag2(QVEC v);
 float V4_mag(QVEC v);
 float V4_dist(QVEC v0, QVEC v1);
 float V4_dist2(QVEC v0, QVEC v1);
+QVEC V4_clamp(QVEC v, QVEC min, QVEC max);
+QVEC V4_saturate(QVEC v);
 QVEC V4_min(QVEC a, QVEC b);
 QVEC V4_max(QVEC a, QVEC b);
 QVEC V4_abs(QVEC v);
