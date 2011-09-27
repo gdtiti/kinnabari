@@ -1752,6 +1752,22 @@ _exit:
 	return res;
 }
 
+int GEOM_seg_aabb_test(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
+	QVEC e;
+	QVEC v;
+	QVEC m;
+	QVEC a;
+	QVEC t;
+	e = V4_sub(pBox->max.qv, pBox->min.qv);
+	v = V4_sub(p1, p0);
+	m = V4_sub(V4_add(p0, p1), V4_add(pBox->min.qv, pBox->max.qv));
+	a = V4_abs(v);
+	if (V4_gt(V4_abs(m), V4_add(a, e)) & 7) return 0;
+	t = V4_add(V4_mul(D_V4_SHUFFLE(e, 1, 0, 0, 3), D_V4_SHUFFLE(a, 2, 2, 1, 3)), V4_mul(D_V4_SHUFFLE(e, 2, 2, 1, 3), D_V4_SHUFFLE(a, 1, 0, 0, 3)));
+	if (V4_gt(V4_abs(V4_cross(m, v)), t) & 7) return 0;
+	return 1;
+}
+
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord) {
 	QVEC dv0;
 	QVEC dv1;
