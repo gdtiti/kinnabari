@@ -35,8 +35,23 @@ typedef struct _OBST_POLY {
 	sys_ui32 attr; /* E_OBST_POLYATTR */
 } OBST_POLY;
 
+typedef struct _BVH_HEAD {
+	sys_ui32 magic;
+	sys_ui32 nb_node;
+	sys_ui32 reserved[2];
+} BVH_HEAD;
+
+typedef struct _BVH_NODE {
+	union {
+		sys_i16 left;
+		sys_i16 prim;
+	};
+	sys_i16 right;
+} BVH_NODE;
+
 typedef struct _OBSTACLE {
 	OBST_HEAD* pData;
+	BVH_HEAD* pBVH;
 	UVEC3* pPnt;
 	OBST_POLY* pPol;
 } OBSTACLE;
@@ -52,6 +67,6 @@ typedef struct _OBST_QUERY {
 	int pol_no;
 } OBST_QUERY;
 
-D_EXTERN_FUNC void OBST_load(OBSTACLE* pObst, const char* name);
+D_EXTERN_FUNC void OBST_load(OBSTACLE* pObst, const char* obs_name, const char* bvh_name);
 D_EXTERN_FUNC int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry);
 D_EXTERN_FUNC int OBST_collide(OBSTACLE* pObst, QVEC cur_pos, QVEC prev_pos, float r, sys_ui32 mask, QVEC* pNew_pos);

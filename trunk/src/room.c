@@ -253,7 +253,7 @@ void RMD_disp(ROOM_MODEL* pRmd) {
 void ROOM_init(int id) {
 	ROOM* pRoom = &g_room;
 	memset(pRoom, 0, sizeof(ROOM));
-	OBST_load(&pRoom->obst, "room/room.obs");
+	OBST_load(&pRoom->obst, "room/room.obs", "room/room.bvh");
 	pRoom->pRmd[0] = RMD_load("room/room.rmd");
 	CAM_load_data(&g_cam, "room/room.kfr", "room/room.lan");
 }

@@ -23,16 +23,30 @@
 #include "util.h"
 #include "obstacle.h"
 
-void OBST_load(OBSTACLE* pObst, const char* name) {
+typedef struct _BVH_WORK {
+	GEOM_AABB bbox;
+	OBST_QUERY* pQry;
+	float min_dist2;
+	int res;
+} BVH_WORK;
+
+void OBST_load(OBSTACLE* pObst, const char* obs_name, const char* bvh_name) {
 	OBST_HEAD* pHead;
 
-	pHead = SYS_load(name);
+	pHead = SYS_load(obs_name);
 	pObst->pData = pHead;
 	pObst->pPnt = NULL;
 	pObst->pPol = NULL;
 	if (pHead && pHead->magic == D_FOURCC('O','B','S','T')) {
 		pObst->pPnt = (UVEC3*)(pHead + 1);
 		pObst->pPol = (OBST_POLY*)&pObst->pPnt[pHead->nb_pnt];
+	}
+	pObst->pBVH = NULL;
+	if (bvh_name) {
+		BVH_HEAD* pBVH = SYS_load(bvh_name);
+		if (pBVH && pBVH->magic == D_FOURCC('B','V','H',0)) {
+			pObst->pBVH = pBVH;
+		}
 	}
 }
 
@@ -41,7 +55,7 @@ static QVEC Get_vtx(OBSTACLE* pObst, int idx) {
 	return V4_set(pPnt->x, pPnt->y, pPnt->z, 1.0f);
 }
 
-int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry) {
+static int Obst_check_direct(OBSTACLE* pObst, OBST_QUERY* pQry) {
 	QVEC vtx[4];
 	QVEC hit_pos;
 	QVEC hit_nml;
@@ -74,6 +88,86 @@ int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry) {
 	}
 	pQry->res = res;
 	return res;
+}
+
+GEOM_AABB* BVH_get_node_bbox(BVH_HEAD* pBVH, int i) {
+	return (GEOM_AABB*)(pBVH + 1) + i;
+}
+
+BVH_NODE* BVH_get_node(BVH_HEAD* pBVH, int i) {
+	return (BVH_NODE*)BVH_get_node_bbox(pBVH, pBVH->nb_node) + i;
+}
+
+BVH_NODE* BVH_get_root(BVH_HEAD* pBVH) {
+	return BVH_get_node(pBVH, 0);
+}
+
+int BVH_get_node_id(BVH_HEAD* pBVH, BVH_NODE* pNode) {
+	return (int)(pNode - BVH_get_root(pBVH));
+}
+
+D_FORCE_INLINE static int Node_hit_ck(OBSTACLE* pObst, BVH_NODE* pNode, BVH_WORK* pWk) {
+	GEOM_AABB* pBox = BVH_get_node_bbox(pObst->pBVH, BVH_get_node_id(pObst->pBVH, pNode));
+	if (GEOM_aabb_overlap(&pWk->bbox, pBox)) {
+		if (GEOM_seg_aabb_test(pWk->pQry->p0.qv, pWk->pQry->p1.qv, pBox)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void Obst_bvh_ck(OBSTACLE* pObst, BVH_NODE* pNode, BVH_WORK* pWk) {
+	QVEC vtx[4];
+	QVEC hit_pos;
+	QVEC hit_nml;
+	int i;
+	float dist2;
+	if (Node_hit_ck(pObst, pNode, pWk)) {
+		if (pNode->right < 0) {
+			OBST_QUERY* pQry = pWk->pQry;
+			OBST_POLY* pPol = &pObst->pPol[pNode->prim];
+			if (pPol->attr & pQry->mask) {
+				for (i = 0; i < 4; ++i) {
+					vtx[i] = Get_vtx(pObst, pPol->idx[i]);
+				}
+				if (GEOM_seg_quad_intersect(pQry->p0.qv, pQry->p1.qv, vtx, &hit_pos, &hit_nml)) {
+					dist2 = V4_dist2(pQry->p0.qv, hit_pos);
+					if (dist2 < pWk->min_dist2) {
+						pQry->hit_pos.qv = hit_pos;
+						pQry->hit_nml.qv = hit_nml;
+						pQry->dist2 = dist2;
+						pQry->pol_no = pNode->prim;
+						pWk->min_dist2 = dist2;
+					}
+					pWk->res = 1;
+				}
+			}
+		} else {
+			Obst_bvh_ck(pObst, BVH_get_node(pObst->pBVH, pNode->left), pWk);
+			Obst_bvh_ck(pObst, BVH_get_node(pObst->pBVH, pNode->right), pWk);
+		}
+	}
+}
+
+static int Obst_check_bvh(OBSTACLE* pObst, OBST_QUERY* pQry) {
+	BVH_WORK wk;
+
+	wk.bbox.min.qv = V4_set_w1(V4_min(pQry->p0.qv, pQry->p1.qv));
+	wk.bbox.max.qv = V4_set_w1(V4_max(pQry->p0.qv, pQry->p1.qv));
+	wk.pQry = pQry;
+	wk.res = 0;
+	wk.min_dist2 = D_MAX_FLOAT;
+	Obst_bvh_ck(pObst, BVH_get_root(pObst->pBVH), &wk);
+	pQry->res = wk.res;
+	return wk.res;
+}
+
+int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry) {
+	if (pObst->pBVH) {
+		return Obst_check_bvh(pObst, pQry);
+	} else {
+		return Obst_check_direct(pObst, pQry);
+	}
 }
 
 int OBST_collide(OBSTACLE* pObst, QVEC cur_pos, QVEC prev_pos, float r, sys_ui32 mask, QVEC* pNew_pos) {
