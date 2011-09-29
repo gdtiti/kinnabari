@@ -162,12 +162,15 @@ float VEC_mag2(VEC v);
 float VEC_mag(VEC v);
 
 void V4_store(float* p, QVEC v);
+void V4_store_vec3(VEC v3, QVEC qv);
 float V4_at(QVEC v, int idx);
 QVEC V4_set(float x, float y, float z, float w);
 QVEC V4_set_vec(float x, float y, float z);
 QVEC V4_set_pnt(float x, float y, float z);
 QVEC V4_fill(float x);
 QVEC V4_load(float* p);
+QVEC V4_load_vec3(VEC v);
+QVEC V4_load_pnt3(VEC v);
 QVEC V4_zero(void);
 QVEC V4_set_w0(QVEC v);
 QVEC V4_set_w1(QVEC v);
