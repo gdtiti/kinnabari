@@ -133,6 +133,14 @@ void V4_store(float* p, QVEC v) {
 #endif
 }
 
+void V4_store_vec3(VEC v3, QVEC qv) {
+	UVEC v;
+	v.qv = qv;
+	v3[0] = v.x;
+	v3[1] = v.y;
+	v3[2] = v.z;
+}
+
 float V4_at(QVEC v, int idx) {
 	UVEC v0;
 	v0.qv = v;
@@ -184,6 +192,14 @@ QVEC V4_load(float* p) {
 #else
 	return _mm_load_ps(p);
 #endif
+}
+
+QVEC V4_load_vec3(VEC v) {
+	return V4_set_vec(v[0], v[1], v[2]);
+}
+
+QVEC V4_load_pnt3(VEC v) {
+	return V4_set_pnt(v[0], v[1], v[2]);
 }
 
 QVEC V4_zero() {
