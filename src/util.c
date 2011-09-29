@@ -423,3 +423,20 @@ const char* CFG_get(const char* pName) {
 	return pVal;
 }
 
+
+float UTL_frand01() {
+	union {sys_ui32 u32; float f32;} d32;
+	sys_uint r0 = rand() & 0xFF;
+	sys_uint r1 = rand() & 0xFF;
+	sys_uint r2 = rand() & 0xFF;
+	d32.f32 = 1.0f;
+	d32.u32 += (r0 | (r1 << 8) | ((r2 & 0x7F) << 16));
+	d32.f32 -= 1.0f;
+	return d32.f32;
+}
+
+float UTL_frand_11() {
+	float r = UTL_frand01() - 0.5f;
+	return (r + r);
+}
+
