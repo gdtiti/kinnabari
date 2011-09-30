@@ -141,3 +141,40 @@ void SYS_get_input() {
 	g_input.state_trg = state & g_input.state_chg;
 }
 
+static void CPU_serialize() {
+#if defined (__GNUC__) || defined(_WIN64)
+	int dummy[4];
+	__cpuid(dummy, 0);
+#else
+	__asm {
+		sub eax, eax
+		cpuid
+	}
+#endif
+}
+
+static sys_i64 Sys_timestamp_impl() {
+#if 0
+	sys_i64 res;
+	DWORD_PTR mask;
+	HANDLE hThr = GetCurrentThread();
+	mask = SetThreadAffinityMask(hThr, 1);
+	CPU_serialize();
+	res = __rdtsc();
+	SetThreadAffinityMask(hThr, mask);
+	return res;
+#else
+	LARGE_INTEGER ctr;
+	QueryPerformanceCounter(&ctr);
+	return ctr.QuadPart;
+#endif
+}
+
+sys_i64 SYS_get_timestamp() {
+	sys_i64 res;
+	CPU_serialize();
+	res = Sys_timestamp_impl();
+	CPU_serialize();
+	return res;
+}
+
