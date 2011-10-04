@@ -1592,6 +1592,37 @@ int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox) {
 #endif
 }
 
+void GEOM_dop8_init(GEOM_DOP8* pDOP) {
+	pDOP->min.qv = V4_fill(D_MAX_FLOAT);
+	pDOP->max.qv = V4_fill(D_MIN_FLOAT);
+}
+
+void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos) {
+	static QVEC axis[4] = {
+		{ 1.0f,  1.0f,  1.0f, 0.0f},
+		{ 1.0f,  1.0f, -1.0f, 0.0f},
+		{ 1.0f, -1.0f,  1.0f, 0.0f},
+		{-1.0f,  1.0f,  1.0f, 0.0f}
+	};
+	QVEC v;
+	v = V4_set(V4_dot4(pos, axis[0]), V4_dot4(pos, axis[1]), V4_dot4(pos, axis[2]), V4_dot4(pos, axis[3]));
+	pDOP->min.qv = V4_min(pDOP->min.qv, v);
+	pDOP->max.qv = V4_max(pDOP->max.qv, v);
+}
+
+int GEOM_dop8_overlap(GEOM_DOP8* pDOP0, GEOM_DOP8* pDOP1) {
+#if D_KISS
+	if (pDOP0->min.x > pDOP1->max.x || pDOP0->max.x < pDOP1->min.x) return 0;
+	if (pDOP0->min.y > pDOP1->max.y || pDOP0->max.y < pDOP1->min.y) return 0;
+	if (pDOP0->min.z > pDOP1->max.z || pDOP0->max.z < pDOP1->min.z) return 0;
+	if (pDOP0->min.w > pDOP1->max.w || pDOP0->max.w < pDOP1->min.w) return 0;
+	return 1;
+#else
+	int m = _mm_movemask_ps(_mm_and_ps(_mm_cmple_ps(pDOP0->min.qv, pDOP1->max.qv), _mm_cmpnlt_ps(pDOP0->max.qv, pDOP1->min.qv)));
+	return ((m & 0xF) == 0xF);
+#endif
+}
+
 float GEOM_tri_dist2(QVEC pos, QVEC* pVtx) {
 	QVEC p = pos;
 	QVEC a = pVtx[0];

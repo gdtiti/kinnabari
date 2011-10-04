@@ -132,6 +132,11 @@ typedef struct _GEOM_AABB {
 	UVEC max;
 } GEOM_AABB;
 
+typedef struct _GEOM_DOP8 {
+	UVEC min;
+	UVEC max;
+} GEOM_DOP8;
+
 typedef union _GEOM_SPHERE {
 	QVEC qv;
 	struct {float x, y, z, r;};
@@ -275,6 +280,9 @@ float SPL_overhauser(QVEC pvec, float t);
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
 int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
+void GEOM_dop8_init(GEOM_DOP8* pDOP);
+void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos);
+int GEOM_dop8_overlap(GEOM_DOP8* pDOP0, GEOM_DOP8* pDOP1);
 float GEOM_tri_dist2(QVEC pos, QVEC* pVtx);
 float GEOM_quad_dist2(QVEC pos, QVEC* pVtx);
 int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* pHit_nml);
