@@ -124,10 +124,12 @@ D_EXTERN_FUNC void MDL_sys_init(void);
 D_EXTERN_FUNC void MDL_sys_reset(void);
 
 D_EXTERN_FUNC OMD* OMD_load(const char* name);
+D_EXTERN_FUNC void OMD_free(OMD* pOmd);
 D_EXTERN_FUNC JNT_INFO* OMD_get_jnt_info(OMD* pOmd, const char* name);
 D_EXTERN_FUNC int OMD_get_jnt_idx(OMD* pOmd, const char* name);
 
 D_EXTERN_FUNC MODEL* MDL_create(OMD* pOmd);
+D_EXTERN_FUNC void MDL_destroy(MODEL* pMdl);
 D_EXTERN_FUNC void MDL_jnt_reset(MODEL* pMdl);
 D_EXTERN_FUNC void MDL_calc_local(MODEL* pMdl);
 D_EXTERN_FUNC void MDL_calc_world(MODEL* pMdl);

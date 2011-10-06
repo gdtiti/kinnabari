@@ -241,6 +241,17 @@ void CAM_load_data(CAMERA* pCam, const char* fname_kfr, const char* fname_lane) 
 	}
 }
 
+void CAM_free_data(CAMERA* pCam) {
+	if (pCam) {
+		KFR_free(pCam->pKfr_data);
+		pCam->pKfr_data = NULL;
+		SYS_free(pCam->pLane_data);
+		pCam->pLane_data = NULL;
+		SYS_free(pCam->pLane_anm);
+		pCam->pLane_anm = NULL;
+	}
+}
+
 static int Check_lane(LANE_VTX* pVtx, int nb_pol, QVEC p0, QVEC p1, UVEC* pUV) {
 	QVEC quad[4];
 	QVEC tri[3];

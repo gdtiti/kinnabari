@@ -202,6 +202,16 @@ OMD* OMD_load(const char* name) {
 	return pOmd;
 }
 
+void OMD_free(OMD* pOmd) {
+	if (pOmd) {
+		RDR_idx_relese(pOmd->pIdx);
+		RDR_vtx_relese(pOmd->pVtx);
+		MTL_lst_destroy(pOmd->pMtl_lst);
+		DICT_destroy(pOmd->pName_dict);
+		SYS_free(pOmd);
+	}
+}
+
 JNT_INFO* OMD_get_jnt_info(OMD* pOmd, const char* name) {
 	return (JNT_INFO*)DICT_get_p(pOmd->pName_dict, name);
 }
@@ -242,6 +252,10 @@ MODEL* MDL_create(OMD* pOmd) {
 	MDL_calc_local(pMdl);
 	MDL_calc_world(pMdl);
 	return pMdl;
+}
+
+void MDL_destroy(MODEL* pMdl) {
+	SYS_free(pMdl);
 }
 
 void MDL_jnt_reset(MODEL* pMdl) {

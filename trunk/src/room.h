@@ -79,8 +79,8 @@ typedef struct _ROOM {
 
 D_EXTERN_DATA ROOM g_room;
 
-
 D_EXTERN_FUNC void ROOM_init(int id);
+D_EXTERN_FUNC void ROOM_free(void);
 D_EXTERN_FUNC void ROOM_cull(CAMERA* pCam);
 D_EXTERN_FUNC void ROOM_disp(void);
 

@@ -58,6 +58,11 @@ static void Data_init() {
 	ROOM_init(0);
 }
 
+static void Data_free() {
+	ROOM_free();
+	PLR_free();
+}
+
 static void Wrk_init_func(JOB_WORKER* pWrk) {
 	struct {
 		DWORD  type;
@@ -177,6 +182,7 @@ static void Loop() {
 }
 
 static void Reset() {
+	Data_free();
 	MTL_sys_reset();
 	MDL_sys_reset();
 	JOB_sys_reset();

@@ -63,6 +63,7 @@ D_EXTERN_FUNC void MTL_sys_init(void);
 D_EXTERN_FUNC void MTL_sys_reset(void);
 
 D_EXTERN_FUNC MTL_LIST* MTL_lst_create(MTL_INFO* pInfo, sys_ui32* pName_offs, void* pData_top, int n);
+D_EXTERN_FUNC void MTL_lst_destroy(MTL_LIST* pLst);
 
 D_EXTERN_FUNC RDR_BATCH_PARAM* MTL_apply(MATERIAL* pMtl, RDR_BATCH_PARAM* pParam);
 

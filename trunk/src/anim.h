@@ -127,6 +127,7 @@ typedef struct _ANIMATION {
 } ANIMATION;
 
 D_EXTERN_FUNC KFR_HEAD* KFR_load(const char* name);
+D_EXTERN_FUNC void KFR_free(KFR_HEAD* pKfr);
 D_EXTERN_FUNC KFR_GROUP* KFR_get_grp(KFR_HEAD* pKfr, int grp_no);
 D_EXTERN_FUNC const char* KFR_get_grp_name(KFR_HEAD* pKfr, KFR_GROUP* pGrp);
 D_EXTERN_FUNC KFR_GROUP* KFR_search_grp(KFR_HEAD* pKfr, const char* name);
@@ -138,6 +139,7 @@ D_EXTERN_FUNC QVEC KFR_eval_grp(KFR_HEAD* pKfr, KFR_GROUP* pGrp, float frame);
 D_EXTERN_FUNC ANIMATION* ANM_create(MODEL* pMdl);
 D_EXTERN_FUNC void ANM_destroy(ANIMATION* pAnm);
 D_EXTERN_FUNC ANM_DATA* ANM_data_create(ANIMATION* pAnm, KFR_HEAD* pKfr);
+D_EXTERN_FUNC void ANM_data_destroy(ANM_DATA* pData);
 D_EXTERN_FUNC void ANM_set(ANIMATION* pAnm, ANM_DATA* pData, int start_frame);
 D_EXTERN_FUNC void ANM_play(ANIMATION* pAnm);
 D_EXTERN_FUNC void ANM_move(ANIMATION* pAnm);

@@ -50,6 +50,15 @@ void OBST_load(OBSTACLE* pObst, const char* obs_name, const char* bvh_name) {
 	}
 }
 
+void OBST_free(OBSTACLE* pObst) {
+	if (pObst) {
+		SYS_free(pObst->pData);
+		pObst->pData = NULL;
+		SYS_free(pObst->pBVH);
+		pObst->pBVH = NULL;
+	}
+}
+
 static QVEC Get_vtx(OBSTACLE* pObst, int idx) {
 	UVEC3* pPnt = &pObst->pPnt[idx];
 	return V4_set(pPnt->x, pPnt->y, pPnt->z, 1.0f);
