@@ -115,6 +115,14 @@ ROOM_MODEL* RMD_load(const char* name) {
 	return pRmd;
 }
 
+void RMD_free(ROOM_MODEL* pRmd) {
+	if (pRmd) {
+		RDR_idx_relese(pRmd->pIdx);
+		RDR_vtx_relese(pRmd->pVtx);
+		MTL_lst_destroy(pRmd->pMtl_lst);
+	}
+}
+
 static int Rmd_cull_box(GEOM_AABB* pBox, CAMERA* pCam) {
 	int flg = CAM_cull_box(pCam, pBox);
 	if (!flg) {
@@ -256,6 +264,16 @@ void ROOM_init(int id) {
 	OBST_load(&pRoom->obst, "room/room.obs", "room/room.bvh");
 	pRoom->pRmd[0] = RMD_load("room/room.rmd");
 	CAM_load_data(&g_cam, "room/room.kfr", "room/room.lan");
+}
+
+void ROOM_free() {
+	int i;
+	ROOM* pRoom = &g_room;
+	OBST_free(&pRoom->obst);
+	for (i = 0; i < D_MAX_ROOM_MDL; ++i) {
+		RMD_free(pRoom->pRmd[i]);
+	}
+	CAM_free_data(&g_cam);
 }
 
 void ROOM_cull(CAMERA* pCam) {

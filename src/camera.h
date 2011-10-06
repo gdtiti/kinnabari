@@ -96,5 +96,6 @@ D_EXTERN_FUNC void CAM_apply(CAMERA* pCam);
 D_EXTERN_FUNC int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox);
 D_EXTERN_FUNC int CAM_cull_box_ex(CAMERA* pCam, GEOM_AABB* pBox);
 D_EXTERN_FUNC void CAM_load_data(CAMERA* pCam, const char* fname_kfr, const char* fname_lane);
+D_EXTERN_FUNC void CAM_free_data(CAMERA* pCam);
 D_EXTERN_FUNC void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn, float heading);
 

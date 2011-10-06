@@ -68,5 +68,6 @@ typedef struct _OBST_QUERY {
 } OBST_QUERY;
 
 D_EXTERN_FUNC void OBST_load(OBSTACLE* pObst, const char* obs_name, const char* bvh_name);
+D_EXTERN_FUNC void OBST_free(OBSTACLE* pObst);
 D_EXTERN_FUNC int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry);
 D_EXTERN_FUNC int OBST_collide(OBSTACLE* pObst, QVEC cur_pos, QVEC prev_pos, float r, sys_ui32 mask, QVEC* pNew_pos);

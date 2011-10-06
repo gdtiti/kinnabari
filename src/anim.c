@@ -33,6 +33,10 @@ KFR_HEAD* KFR_load(const char* name) {
 	return pKfr;
 }
 
+void KFR_free(KFR_HEAD* pKfr) {
+	SYS_free(pKfr);
+}
+
 KFR_GROUP* KFR_get_grp(KFR_HEAD* pKfr, int grp_no) {
 	KFR_GROUP* pGrp = NULL;
 	if ((sys_uint)grp_no < pKfr->nb_grp) {
@@ -227,6 +231,13 @@ ANM_DATA* ANM_data_create(ANIMATION* pAnm, KFR_HEAD* pKfr) {
 		++pInfo;
 	}
 	return pData;
+}
+
+void ANM_data_destroy(ANM_DATA* pData) {
+	if (pData) {
+		KFR_free(pData->pKfr);
+		SYS_free(pData);
+	}
 }
 
 void ANM_set(ANIMATION* pAnm, ANM_DATA* pData, int start_frame) {

@@ -65,6 +65,12 @@ MTL_LIST* MTL_lst_create(MTL_INFO* pInfo, sys_ui32* pName_offs, void* pData_top,
 	return pLst;
 }
 
+void MTL_lst_destroy(MTL_LIST* pLst) {
+	if (pLst) {
+		DICT_destroy(pLst->pName_dict);
+		SYS_free(pLst);
+	}
+}
 
 RDR_BATCH_PARAM* MTL_apply(MATERIAL* pMtl, RDR_BATCH_PARAM* pParam) {
 	int n = 0;

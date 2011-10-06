@@ -18,6 +18,8 @@
  * Author: Sergey Chaban <sergey.chaban@gmail.com>
  */
 
+#define D_PLR_MAX_ANIM (16)
+
 typedef enum _E_PLSTATE {
 	E_PLSTATE_IDLE,
 	E_PLSTATE_WALK
@@ -31,7 +33,7 @@ typedef struct _PLAYER {
 	OMD* pOmd;
 	MODEL* pMdl;
 	ANIMATION* pAnm;
-	ANM_DATA* pAnm_data[16];
+	ANM_DATA* pAnm_data[D_PLR_MAX_ANIM];
 	PLAYER_CTRL ctrl;
 	sys_ui32 inp_on;
 	sys_ui32 inp_trg;
@@ -40,5 +42,6 @@ typedef struct _PLAYER {
 D_EXTERN_DATA PLAYER g_pl;
 
 D_EXTERN_FUNC void PLR_init(void);
+D_EXTERN_FUNC void PLR_free(void);
 D_EXTERN_FUNC void PLR_ctrl(void);
 D_EXTERN_FUNC void PLR_calc(CAMERA* pCam);

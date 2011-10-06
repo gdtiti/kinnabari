@@ -58,6 +58,18 @@ void PLR_init() {
 	pPl->ctrl.var[1] = 1;
 }
 
+void PLR_free() {
+	int i;
+	PLAYER* pPl = &g_pl;
+
+	MDL_destroy(pPl->pMdl);
+	OMD_free(pPl->pOmd);
+	ANM_destroy(pPl->pAnm);
+	for (i = 0; i < D_PLR_MAX_ANIM; ++i) {
+		ANM_data_destroy(pPl->pAnm_data[i]);
+	}
+}
+
 static void Plr_ctrl_idle(PLAYER* pPl) {
 	if (pPl->inp_on & E_KEY_UP) {
 		pPl->ctrl.var[0] = E_PLSTATE_WALK;
