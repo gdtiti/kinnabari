@@ -278,6 +278,7 @@ float SPL_hermite(float p0, float m0, float p1, float m1, float t);
 float SPL_overhauser(QVEC pvec, float t);
 
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
+void GEOM_aabb_init(GEOM_AABB* pBox);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
 int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
 void GEOM_dop8_init(GEOM_DOP8* pDOP);

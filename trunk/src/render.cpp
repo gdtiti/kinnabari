@@ -1942,7 +1942,7 @@ static void Rdr_shadow_calc() {
 	tgt.qv = V4_sub(pos.qv, sdir.qv);
 	MTX_make_view(vm, pos.qv, tgt.qv, up.qv);
 	ymin = D_MAX_FLOAT;
-	ymax = D_MIN_FLOAT;
+	ymax = -D_MAX_FLOAT;
 	for (i = 0; i < 8; ++i) {
 		tv.qv = MTX_calc_qpnt(vm, box[i].qv);
 		ymin = F_min(ymin, tv.y);
@@ -1963,7 +1963,7 @@ static void Rdr_shadow_calc() {
 	MTX_make_view(vm, pos.qv, tgt.qv, up.qv);
 	MTX_mul(tm, vm, cm);
 	vmin.qv = V4_fill(D_MAX_FLOAT);
-	vmax.qv = V4_fill(D_MIN_FLOAT);
+	vmax.qv = V4_fill(-D_MAX_FLOAT);
 	for (i = 0; i < 8; ++i) {
 		tv.qv = MTX_calc_qpnt(tm, box[i].qv);
 		tv.qv = V4_set_w1(V4_scale(tv.qv, 1.0f/tv.w));
