@@ -1556,6 +1556,7 @@ float SPL_overhauser(QVEC pvec, float t) {
 	return V4_dot4(pvec, tvec);
 }
 
+
 QVEC _GEOM_get_plane_static(QVEC pos, QVEC nrm) {
 	return GEOM_get_plane(pos, nrm);
 }
@@ -1564,6 +1565,11 @@ D_FORCE_INLINE QVEC GEOM_get_plane(QVEC pos, QVEC nrm) {
 	QVEC n = V4_set_w0(nrm);
 	float d = V4_dot4(pos, nrm);
 	return V4_set(V4_at(n, 0), V4_at(n, 1), V4_at(n, 2), d);
+}
+
+void GEOM_aabb_init(GEOM_AABB* pBox) {
+	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
+	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
 }
 
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1) {
@@ -1594,7 +1600,7 @@ int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox) {
 
 void GEOM_dop8_init(GEOM_DOP8* pDOP) {
 	pDOP->min.qv = V4_fill(D_MAX_FLOAT);
-	pDOP->max.qv = V4_fill(D_MIN_FLOAT);
+	pDOP->max.qv = V4_fill(-D_MAX_FLOAT);
 }
 
 void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos) {

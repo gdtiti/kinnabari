@@ -338,8 +338,7 @@ static void Grp_cull(MODEL* pMdl, CAMERA* pCam, int grp_no, GEOM_SPHERE* pSph, i
 	sys_byte* pJnt_id;
 
 	pJnt_id = (sys_byte*)(pSph + nb_jnt);
-	box.min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
-	box.max.qv = V4_set_pnt(D_MIN_FLOAT, D_MIN_FLOAT, D_MIN_FLOAT);
+	GEOM_aabb_init(&box);
 	for (i = 0; i < nb_jnt; ++i) {
 		jnt_id = *pJnt_id;
 		pos = MTX_calc_qpnt(pMdl->pJnt_wmtx[jnt_id], pSph->qv);
