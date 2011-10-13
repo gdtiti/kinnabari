@@ -1811,11 +1811,14 @@ int GEOM_seg_aabb_test(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
 	QVEC m;
 	QVEC a;
 	QVEC t;
+	if (GEOM_pnt_inside_aabb(p0, pBox)) return 1;
+	if (GEOM_pnt_inside_aabb(p1, pBox)) return 1;
 	e = V4_sub(pBox->max.qv, pBox->min.qv);
 	v = V4_sub(p1, p0);
 	m = V4_sub(V4_add(p0, p1), V4_add(pBox->min.qv, pBox->max.qv));
 	a = V4_abs(v);
 	if (V4_gt(V4_abs(m), V4_add(a, e)) & 7) return 0;
+	a = V4_add(a, V4_set_w0(V4_fill(1.0f/(1<<12))));
 	t = V4_add(V4_mul(D_V4_SHUFFLE(e, 1, 0, 0, 3), D_V4_SHUFFLE(a, 2, 2, 1, 3)), V4_mul(D_V4_SHUFFLE(e, 2, 2, 1, 3), D_V4_SHUFFLE(a, 1, 0, 0, 3)));
 	if (V4_gt(V4_abs(V4_cross(m, v)), t) & 7) return 0;
 	return 1;
