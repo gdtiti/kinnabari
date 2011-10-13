@@ -1567,6 +1567,18 @@ D_FORCE_INLINE QVEC GEOM_get_plane(QVEC pos, QVEC nrm) {
 	return V4_set(V4_at(n, 0), V4_at(n, 1), V4_at(n, 2), d);
 }
 
+QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2) {
+	QVEC pnt = V4_zero();
+	QVEC u = V4_cross(pln1, pln2);
+	float d = V4_dot4(pln0, u);
+	if (fabsf(d) >= 1e-8f) {
+		pnt = V4_mul(u, D_V4_SHUFFLE(pln0, 3, 3, 3, 3));
+		pnt = V4_add(pnt, V4_cross(pln0, V4_sub(V4_mul(pln1, D_V4_SHUFFLE(pln2, 3, 3, 3, 3)),  V4_mul(pln2, D_V4_SHUFFLE(pln1, 3, 3, 3, 3)))));
+		pnt = V4_set_w1(V4_scale(pnt, 1.0f/d));
+	}
+	return pnt;
+}
+
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
