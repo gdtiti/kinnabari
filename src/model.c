@@ -204,8 +204,8 @@ OMD* OMD_load(const char* name) {
 
 void OMD_free(OMD* pOmd) {
 	if (pOmd) {
-		RDR_idx_relese(pOmd->pIdx);
-		RDR_vtx_relese(pOmd->pVtx);
+		RDR_idx_release(pOmd->pIdx);
+		RDR_vtx_release(pOmd->pVtx);
 		MTL_lst_destroy(pOmd->pMtl_lst);
 		DICT_destroy(pOmd->pName_dict);
 		SYS_free(pOmd);
