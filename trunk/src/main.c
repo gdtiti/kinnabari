@@ -92,7 +92,7 @@ static void Init() {
 	int style = WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP;
 
 	SYS_init();
-	CFG_init();
+	CFG_init("../data/knbcfg.txt");
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
 	wc.cbSize = sizeof(WNDCLASSEX);
