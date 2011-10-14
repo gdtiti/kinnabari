@@ -391,7 +391,7 @@ void DICT_foreach(DICT* pDict, DICT_FUNC func, void* pData) {
 }
 
 
-void CFG_init() {
+void CFG_init(const char* fname) {
 	FILE* f;
 	char buff[512];
 	char name[256];
@@ -399,7 +399,7 @@ void CFG_init() {
 	const char* pName;
 	const char* pVal;
 
-	fopen_s(&f, "knbcfg.txt", "r");
+	fopen_s(&f, fname, "r");
 	if (!f) return;
 	s_cfg_wk.pSym = DICT_pool_create();
 	s_cfg_wk.pDict = DICT_new();

@@ -81,7 +81,7 @@ D_EXTERN_FUNC char* DICT_add_i(DICT* pDict, const char* pKey, sys_int iVal);
 D_EXTERN_FUNC char* DICT_add_p(DICT* pDict, const char* pKey, void* pVal);
 D_EXTERN_FUNC void DICT_foreach(DICT* pDict, DICT_FUNC func, void* pData);
 
-D_EXTERN_FUNC void CFG_init(void);
+D_EXTERN_FUNC void CFG_init(const char* fname);
 D_EXTERN_FUNC const char* CFG_get(const char* pName);
 
 D_EXTERN_FUNC float UTL_frand01(void);
