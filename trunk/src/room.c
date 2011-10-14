@@ -117,8 +117,8 @@ ROOM_MODEL* RMD_load(const char* name) {
 
 void RMD_free(ROOM_MODEL* pRmd) {
 	if (pRmd) {
-		RDR_idx_relese(pRmd->pIdx);
-		RDR_vtx_relese(pRmd->pVtx);
+		RDR_idx_release(pRmd->pIdx);
+		RDR_vtx_release(pRmd->pVtx);
 		MTL_lst_destroy(pRmd->pMtl_lst);
 	}
 }

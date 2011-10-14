@@ -53,6 +53,12 @@ typedef enum _E_RDR_IDXTYPE {
 	E_RDR_IDXTYPE_32BIT = 1
 } E_RDR_IDXTYPE;
 
+typedef enum _E_RDR_TEXTYPE {
+	E_RDR_TEXTYPE_2D,
+	E_RDR_TEXTYPE_CUBE,
+	E_RDR_TEXTYPE_VOLUME
+} E_RDR_TEXTYPE;
+
 typedef enum _E_RDR_RSRCATTR {
 	E_RDR_RSRCATTR_DYNAMIC = 1
 } E_RDR_RSRCATTR;
@@ -216,6 +222,15 @@ typedef struct _RDR_TARGET {
 	sys_ui16   h;
 } RDR_TARGET;
 
+typedef struct _RDR_TEXTURE {
+	RDR_HANDLE handle;
+	sys_ui16   w;
+	sys_ui16   h;
+	sys_ui16   d;
+	sys_byte   nb_lvl;
+	sys_byte   type; /* E_RDR_TEXTYPE */
+} RDR_TEXTURE;
+
 typedef struct _RDR_SAMPLER {
 	RDR_HANDLE  hTex;
 	RDR_COLOR32 border;
@@ -337,13 +352,16 @@ D_EXTERN_FUNC void RDR_put_batch(RDR_BATCH* pBatch, sys_ui32 key, sys_uint lyr_i
 
 D_EXTERN_FUNC RDR_VTX_BUFFER* RDR_vtx_create(E_RDR_VTXTYPE type, int n);
 D_EXTERN_FUNC RDR_VTX_BUFFER* RDR_vtx_create_dyn(E_RDR_VTXTYPE type, int n);
-D_EXTERN_FUNC void RDR_vtx_relese(RDR_VTX_BUFFER* pVB);
+D_EXTERN_FUNC void RDR_vtx_release(RDR_VTX_BUFFER* pVB);
 D_EXTERN_FUNC void RDR_vtx_lock(RDR_VTX_BUFFER* pVB);
 D_EXTERN_FUNC void RDR_vtx_unlock(RDR_VTX_BUFFER* pVB);
 
 D_EXTERN_FUNC RDR_IDX_BUFFER* RDR_idx_create(E_RDR_IDXTYPE type, int n);
 D_EXTERN_FUNC RDR_IDX_BUFFER* RDR_idx_create_dyn(E_RDR_IDXTYPE type, int n);
-D_EXTERN_FUNC void RDR_idx_relese(RDR_IDX_BUFFER* pIB);
+D_EXTERN_FUNC void RDR_idx_release(RDR_IDX_BUFFER* pIB);
 D_EXTERN_FUNC void RDR_idx_lock(RDR_IDX_BUFFER* pIB);
 D_EXTERN_FUNC void RDR_idx_unlock(RDR_IDX_BUFFER* pIB);
+
+D_EXTERN_FUNC RDR_TEXTURE* RDR_tex_create(void* pTop, int w, int h, int d, int nb_lvl, sys_ui32 fmt, sys_i32* pOffs);
+D_EXTERN_FUNC void RDR_tex_release(RDR_TEXTURE* pTex);
 

@@ -763,7 +763,7 @@ template <typename _T> struct RSRC_STORE {
 
 	void Release(typename RSRC_LIST<_T*>::FOREACH_FUNC pFunc) {
 		int n = mLst.Get_count();
-		SYS_log("Releasing [%s] resources, # items = %d\n", mName, n);
+		if (n) SYS_log("Releasing [%s] resources, # items = %d\n", mName, n);
 		mLst.Foreach(pFunc, NULL);
 		mLst.Reset();
 		RSRC_BLOCK<_T>::Free_all(mpBlk);
@@ -774,12 +774,14 @@ template <typename _T> struct RSRC_STORE {
 struct RDR_RSRC {
 	RSRC_STORE<RDR_VTX_BUFFER> mVtx;
 	RSRC_STORE<RDR_IDX_BUFFER> mIdx;
+	RSRC_STORE<RDR_TEXTURE> mTex;
 	RSRC_STORE<RDR_TARGET> mTgt;
 
 	void Init() {
 		mVtx.Init("VTX");
 		mIdx.Init("IDX");
-		mTgt.Init("RTGT");
+		mTex.Init("TEX");
+		mTgt.Init("TGT");
 	}
 
 	static void Vtx_release(RDR_VTX_BUFFER** ppVB, void* pData) {
@@ -800,7 +802,16 @@ struct RDR_RSRC {
 		}
 	}
 
-	static void Rt_release(RDR_TARGET** ppRT, void* pData) {
+	static void Tex_release(RDR_TEXTURE** ppTex, void* pData) {
+		if (!ppTex) return;
+		RDR_TEXTURE* pTex = *ppTex;
+		if (pTex && pTex->handle) {
+			ULONG refs = Safe_release((IUnknown*)pTex->handle);
+			if (refs == 0) pTex->handle = NULL;
+		}
+	}
+
+	static void Tgt_release(RDR_TARGET** ppRT, void* pData) {
 		if (!ppRT) return;
 		RDR_TARGET* pRT = *ppRT;
 		if (pRT) {
@@ -823,7 +834,8 @@ struct RDR_RSRC {
 	void Release() {
 		mVtx.Release(Vtx_release);
 		mIdx.Release(Idx_release);
-		mTgt.Release(Rt_release);
+		mTex.Release(Tex_release);
+		mTgt.Release(Tgt_release);
 	}
 };
 
@@ -985,6 +997,7 @@ struct RDR_WORK {
 	IDirect3D9* mpD3D;
 	IDirect3DDevice9* mpDev;
 	D3DFORMAT mAdapter_fmt;
+	int max_tex_stg;
 
 	RDR_RSRC mRsrc;
 	RDR_DECL mDecl;
@@ -1699,6 +1712,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 			dev_flags |= D3DCREATE_PUREDEVICE;
 		}
 	}
+	pRdr->max_tex_stg = dev_caps.MaxSimultaneousTextures;
 	memset(&present_params, 0, sizeof(D3DPRESENT_PARAMETERS));
 	present_params.hDeviceWindow = (HWND)hWnd;
 	present_params.Windowed = fullscreen ? FALSE : TRUE;
@@ -1798,7 +1812,17 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 	} \
 
 void RDR_reset() {
+	int i;
 	RDR_WORK* pRdr = &s_rdr;
+	IDirect3DDevice9* pDev = pRdr->mpDev;
+
+	if (pDev) {
+		for (i = 0; i < pRdr->max_tex_stg; ++i) {
+			pDev->SetTexture(i, NULL);
+		}
+		pDev->SetVertexShader(NULL);
+		pDev->SetPixelShader(NULL);
+	}
 
 	pRdr->mGpu_code.Reset();
 	pRdr->mRsrc.Release();
@@ -1952,7 +1976,7 @@ static void Rdr_shadow_calc() {
 	t = (snear + sqrtf(snear*sfar)) / sy;
 	y = (ymax - ymin) / t;
 	MTX_unit(cm);
-	cm[0][0] = -1;
+	cm[0][0] = -1.0f;
 	cm[1][1] = (y + t) / (y - t);
 	cm[1][3] = 1.0f;
 	cm[3][1] = (-2.0f*y*t) / (y - t);
@@ -2271,7 +2295,7 @@ RDR_VTX_BUFFER* RDR_vtx_create_dyn(E_RDR_VTXTYPE type, int n) {
 	return VB_create(type, n, true);
 }
 
-void RDR_vtx_relese(RDR_VTX_BUFFER* pVB) {
+void RDR_vtx_release(RDR_VTX_BUFFER* pVB) {
 	RDR_WORK* pRdr = &s_rdr;
 	if (pVB && pVB->handle) {
 		ULONG refs = ((IDirect3DVertexBuffer9*)pVB->handle)->Release();
@@ -2353,7 +2377,7 @@ RDR_IDX_BUFFER* RDR_idx_create_dyn(E_RDR_IDXTYPE type, int n) {
 	return IB_create(type, n, true);
 }
 
-void RDR_idx_relese(RDR_IDX_BUFFER* pIB) {
+void RDR_idx_release(RDR_IDX_BUFFER* pIB) {
 	RDR_WORK* pRdr = &s_rdr;
 	if (pIB && pIB->handle) {
 		ULONG refs = ((IDirect3DIndexBuffer9*)pIB->handle)->Release();
@@ -2380,6 +2404,164 @@ void RDR_idx_unlock(RDR_IDX_BUFFER* pIB) {
 			pIB->pData = NULL;
 		} else {
 			SYS_log("RDR_idx_unlock: not locked\n");
+		}
+	}
+}
+
+static RDR_TEXTURE* Tex_create(int w, int h, int d, int nb_lvl, E_RDR_TEXTYPE type, D3DFORMAT fmt) {
+	HRESULT hres;
+	RDR_WORK* pRdr = &s_rdr;
+	IDirect3DDevice9* pDev = pRdr->mpDev;
+	RDR_TEXTURE tex;
+	RDR_TEXTURE* pTex = NULL;
+	const D3DPOOL pool = D3DPOOL_MANAGED;
+
+	memset(&tex, 0, sizeof(RDR_TEXTURE));
+	tex.type = type;
+	switch (type) {
+		case E_RDR_TEXTYPE_2D:
+			hres = pDev->CreateTexture(w, h, nb_lvl, 0, fmt, pool, (IDirect3DTexture9**)&tex.handle, NULL);
+			if (SUCCEEDED(hres) && tex.handle) {
+				tex.w = w;
+				tex.h = h;
+			}
+			break;
+		case E_RDR_TEXTYPE_CUBE:
+			hres = pDev->CreateCubeTexture(w, nb_lvl, 0, fmt, pool, (IDirect3DCubeTexture9**)&tex.handle, NULL);
+			if (SUCCEEDED(hres) && tex.handle) {
+				tex.w = w;
+				tex.h = h;
+			}
+			break;
+		case E_RDR_TEXTYPE_VOLUME:
+			hres = pDev->CreateVolumeTexture(w, h, d, nb_lvl, 0, fmt, pool, (IDirect3DVolumeTexture9**)&tex.handle, NULL);
+			if (SUCCEEDED(hres) && tex.handle) {
+				tex.w = w;
+				tex.h = h;
+				tex.d = d;
+			}
+			break;
+		default:
+			SYS_log("Unknown texture type: 0x%X\n", type);
+			break;
+	}
+	if (tex.handle) {
+		tex.nb_lvl = (sys_byte)((IDirect3DBaseTexture9*)tex.handle)->GetLevelCount();
+		pTex = pRdr->mRsrc.mTex.Add(tex);
+	}
+
+	return pTex;
+}
+
+static int Tex_fmt_ck(sys_ui32 fmt) {
+	if (fmt == D3DFMT_DXT1 || fmt == D3DFMT_DXT3 || fmt == D3DFMT_DXT5) {
+		return 1;
+	}
+	return 0;
+}
+
+RDR_TEXTURE* RDR_tex_create(void* pTop, int w, int h, int d, int nb_lvl, sys_ui32 fmt, sys_i32* pOffs) {
+	int i;
+	int n, nb_face;
+	E_RDR_TEXTYPE type;
+	D3DLOCKED_RECT rect;
+	RDR_TEXTURE* pTex = NULL;
+
+	if (!Tex_fmt_ck(fmt)) {
+		SYS_log("Unknown texture format: 0x%X\n", fmt);
+		return NULL;
+	}
+	nb_face = 1;
+	if (d == 0) {
+		type = E_RDR_TEXTYPE_2D;
+	} else if (d < 0) {
+		nb_face = 6;
+		type = E_RDR_TEXTYPE_CUBE;
+	} else {
+		type = E_RDR_TEXTYPE_VOLUME;
+		return NULL;
+	}
+
+	pTex = Tex_create(w, h, d, nb_lvl, type, (D3DFORMAT)fmt);
+	if (!pTex) return NULL;
+
+	for (n = 0; n < nb_face; ++n) {
+		w = pTex->w;
+		h = pTex->h;
+		for (i = 0; i < nb_lvl; ++i) {
+			void* pLvl = D_INCR_PTR(pTop, *pOffs);
+			int lvl_size = 0;
+			switch (fmt) {
+				case D3DFMT_DXT1:
+					lvl_size = ((w+3)/4) * ((h+3)/4) * 8;
+					break;
+				case D3DFMT_DXT3:
+				case D3DFMT_DXT5:
+					lvl_size = ((w+3)/4) * ((h+3)/4) * 16;
+					break;
+				default:
+					break;
+			}
+			rect.pBits = NULL;
+			if (type == E_RDR_TEXTYPE_2D) {
+				((IDirect3DTexture9*)pTex->handle)->LockRect(i, &rect, NULL, 0);
+			} else if (type == E_RDR_TEXTYPE_CUBE) {
+				((IDirect3DCubeTexture9*)pTex->handle)->LockRect((D3DCUBEMAP_FACES)n, i, &rect, NULL, 0);
+			}
+			if (rect.pBits) {
+				int y;
+				void* pSrc;
+				void* pDst;
+				if (fmt == D3DFMT_DXT1 || fmt == D3DFMT_DXT3 || fmt == D3DFMT_DXT5) {
+					int blk_flg = 0;
+					if (fmt == D3DFMT_DXT1) {
+						if (rect.Pitch != w*2) {
+							blk_flg = 1;
+						}
+					} else {
+						if (rect.Pitch != w*4) {
+							blk_flg = 1;
+						}
+					}
+					if (blk_flg) {
+						int nb_blk_w = w > 0 ? D_MAX(1, w/4) : 0;
+						int nb_blk_h = h > 0 ? D_MAX(1, h/4) : 0;
+						int src_pitch = fmt == D3DFMT_DXT1 ? nb_blk_w*8 : nb_blk_w*16;
+						pSrc = pLvl;
+						pDst = rect.pBits;
+						for (y = 0; y < nb_blk_h; ++y) {
+							memset(pDst, 0, rect.Pitch);
+							memcpy(pDst, pSrc, src_pitch);
+							pSrc = D_INCR_PTR(pSrc, src_pitch);
+							pDst = D_INCR_PTR(pDst, rect.Pitch);
+						}
+					} else {
+						memcpy(rect.pBits, pLvl, lvl_size);
+					}
+				}
+			}
+			if (type == E_RDR_TEXTYPE_2D) {
+				((IDirect3DTexture9*)pTex->handle)->UnlockRect(i);
+			} else if (type == E_RDR_TEXTYPE_CUBE) {
+				((IDirect3DCubeTexture9*)pTex->handle)->UnlockRect((D3DCUBEMAP_FACES)n, i);
+			}
+			w >>= 1;
+			if (!w) w = 1;
+			h >>= 1;
+			if (!h) h = 1;
+			++pOffs;
+		}
+	}
+	return pTex;
+}
+
+
+void RDR_tex_release(RDR_TEXTURE* pTex) {
+	RDR_WORK* pRdr = &s_rdr;
+	if (pTex && pTex->handle) {
+		ULONG refs = ((IDirect3DBaseTexture9*)pTex->handle)->Release();
+		if (0 == refs) {
+			pRdr->mRsrc.mTex.Remove(pTex);
 		}
 	}
 }
