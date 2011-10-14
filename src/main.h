@@ -4,6 +4,7 @@
 #include "util.h"
 #include "anim.h"
 #include "render.h"
+#include "texture.h"
 #include "material.h"
 #include "camera.h"
 #include "obstacle.h"
