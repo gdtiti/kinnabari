@@ -274,6 +274,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\src\texture.c"
+			>
+		</File>
+		<File
+			RelativePath=".\src\texture.h"
+			>
+		</File>
+		<File
 			RelativePath=".\src\util.c"
 			>
 		</File>
