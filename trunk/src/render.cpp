@@ -1647,7 +1647,7 @@ void Batch_exec(RDR_BATCH* pBatch) {
 			prim_type = D3DPT_LINELIST;
 			break;
 		case E_RDR_PRIMTYPE_LINESTRIP:
-			prim_type = D3DPT_LINELIST;
+			prim_type = D3DPT_LINESTRIP;
 			break;
 	}
 	pRdr->Set_vb(pBatch->pVtx);
