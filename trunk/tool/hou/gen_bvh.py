@@ -38,35 +38,42 @@ class BinFile:
 class BBox:
 	def __init__(self, bbox = None):
 		if bbox:
-			self.minPos = hou.Vector3(bbox.minPos[0], bbox.minPos[1], bbox.minPos[2])
-			self.maxPos = hou.Vector3(bbox.maxPos[0], bbox.maxPos[1], bbox.maxPos[2])
+			self.minPos = [bbox.minPos[i] for i in xrange(3)]
+			self.maxPos = [bbox.maxPos[i] for i in xrange(3)]
 		else:
-			self.minPos = hou.Vector3(0.0, 0.0, 0.0)
-			self.maxPos = self.minPos
+			self.minPos = [0.0 for i in xrange(3)]
+			self.maxPos = list(self.minPos)
+
+	def addPnt(self, pos):
+		for i in xrange(3):
+			if pos[i] < self.minPos[i]: self.minPos[i] = pos[i]
+			if pos[i] > self.maxPos[i]: self.maxPos[i] = pos[i]
 
 	def fromPoly(self, poly):
 		nbVtx = len(poly.prim.vertices())
 		pos = poly.prim.vertices()[0].point().position()
-		aabb = hou.BoundingBox(pos[0], pos[1], pos[2], pos[0], pos[1], pos[2])
+		self.minPos = [pos[i] for i in xrange(3)]
+		self.maxPos = list(self.minPos)
 		for i in xrange(1, nbVtx):
 			pos = poly.prim.vertices()[i].point().position()
-			aabb.enlargeToContain(pos)
-		self.fromAABB(aabb)
+			self.addPnt(pos)
 
 	def fromAABB(self, aabb):
-		self.minPos = aabb.minvec()
-		self.maxPos = aabb.maxvec()
+		vmin = aabb.minvec()
+		vmax = aabb.maxvec()
+		self.minPos = [vmin[i] for i in xrange(3)]
+		self.maxPos = [vmax[i] for i in xrange(3)]
 
 	def merge(self, bbox):
 		for i in xrange(3):
-			self.minPos[i] = min(self.minPos[i], bbox.minPos[i])
-			self.maxPos[i] = max(self.maxPos[i], bbox.maxPos[i])
+			if bbox.minPos[i] < self.minPos[i]: self.minPos[i] = bbox.minPos[i]
+			if bbox.maxPos[i] > self.maxPos[i]: self.maxPos[i] = bbox.maxPos[i]
 
 	def size(self):
-		return self.maxPos - self.minPos
+		return [self.maxPos[i] - self.minPos[i] for i in xrange(3)]
 
 	def center(self):
-		return (self.minPos + self.maxPos) * 0.5
+		return [(self.minPos[i] + self.maxPos[i]) * 0.5 for i in xrange(3)]
 
 	def maxDim(self):
 		sv = self.size()
@@ -109,6 +116,7 @@ class Node:
 		self.primList = []
 		self.left = None
 		self.right = None
+		self.bvh.nodeMap[self] = len(self.bvh.nodeList)
 		self.bvh.nodeList.append(self)
 
 	def addPrims(self, polyList, idx, count):
@@ -147,8 +155,8 @@ class Node:
 		left = -1
 		right = -1
 		if len(self.primList): prim = self.primList[0].number()
-		if self.left: left = self.bvh.nodeList.index(self.left)
-		if self.right: right = self.bvh.nodeList.index(self.right)
+		if self.left: left = self.bvh.nodeMap[self.left]
+		if self.right: right = self.bvh.nodeMap[self.right]
 		if right < 0:
 			f.writeI16(prim)
 		else:
@@ -162,6 +170,7 @@ class BVH:
 		self.bbox.fromAABB(geo.boundingBox())
 		self.polyList = []
 		self.nodeList = []
+		self.nodeMap = {}
 		for prim in geo.prims():
 			self.polyList.append(Poly(self, prim))
 		self.root = Node(self)
