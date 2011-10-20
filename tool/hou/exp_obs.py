@@ -108,7 +108,7 @@ for i, prim in enumerate(geo.geometry().prims()):
 			out.writeI16(prim.vertices()[2].point().number())
 			out.writeI16(prim.vertices()[1].point().number())
 			out.writeI16(prim.vertices()[0].point().number())
-			out.writeI16(prim.vertices()[2].point().number())
+			out.writeI16(prim.vertices()[0].point().number())
 		out.writeI32(attr)
 
 out.close()
