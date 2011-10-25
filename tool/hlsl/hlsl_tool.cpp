@@ -147,7 +147,6 @@ void main(int argc, char* argv[]) {
 			++s_tbl.nb_param;
 		}
 
-
 		int tbl_size = sizeof(int) + s_tbl.nb_param*sizeof(PARAM_INFO);
 		int prm_size = tbl_size + pSym->Length();
 		char* pPrm = new char[prm_size];
@@ -159,12 +158,18 @@ void main(int argc, char* argv[]) {
 
 		delete pSym;
 
-		if (pErr) {
-			pErr->Release();
-		}
 		if (pTbl) {
 			pTbl->Release();
 		}
+	} else {
+		if (pErr) {
+			char* pErr_msg = (char*)pErr->GetBufferPointer();
+			printf("%s", pErr_msg);
+		}
+	}
+
+	if (pErr) {
+		pErr->Release();
 	}
 }
 
