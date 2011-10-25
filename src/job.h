@@ -29,7 +29,7 @@ typedef struct _JOB_WORKER {
 	JOB_HANDLE done_sig;
 	sys_int    exec_count;
 	sys_int    id;
-	sys_int   end_flg;
+	sys_int    end_flg;
 } JOB_WORKER;
 
 typedef void (*JOB_FUNC)(void*);
@@ -67,5 +67,6 @@ D_EXTERN_FUNC void JOB_que_free(JOB_QUEUE* pQue);
 D_EXTERN_FUNC void JOB_que_clear(JOB_QUEUE* pQue);
 D_EXTERN_FUNC void JOB_put(JOB_QUEUE* pQue, JOB* pJob);
 D_EXTERN_FUNC void JOB_schedule(JOB_QUEUE* pQue, sys_int nb_wrk);
+D_EXTERN_FUNC void JOB_lock(void);
+D_EXTERN_FUNC void JOB_unlock(void);
 D_EXTERN_FUNC sys_int JOB_get_worker_id(void);
-

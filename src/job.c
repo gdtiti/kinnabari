@@ -30,6 +30,7 @@
 
 JOB_SYS g_job_sys = {NULL};
 static JOB_WRK_INIT_FUNC s_job_wrk_init_func = NULL;
+static CRITICAL_SECTION s_job_cs;
 
 static void Job_exec(JOB_WORKER* pWrk) {
 	long count;
@@ -75,6 +76,7 @@ void JOB_sys_init(JOB_WRK_INIT_FUNC wrk_init_func) {
 	JOB_SYS* pSys = &g_job_sys;
 	JOB_SCHEDULER* pSdl = &pSys->scheduler;
 
+	InitializeCriticalSection(&s_job_cs);
 	pSys->wrk_init_func = wrk_init_func;
 	pSdl->main_tid = GetCurrentThreadId();
 	pSdl->pQue = NULL;
@@ -116,6 +118,7 @@ void JOB_sys_reset() {
 		CloseHandle(pWrk->thandle);
 		++pWrk;
 	}
+	DeleteCriticalSection(&s_job_cs);
 }
 
 JOB_QUEUE* JOB_que_alloc(sys_ui32 size) {
@@ -181,6 +184,14 @@ void JOB_schedule(JOB_QUEUE* pQue, sys_int nb_wrk) {
 	}
 	JOB_que_clear(pQue);
 	pSdl->pQue = NULL;
+}
+
+void JOB_lock() {
+	EnterCriticalSection(&s_job_cs);
+}
+
+void JOB_unlock() {
+	LeaveCriticalSection(&s_job_cs);
 }
 
 sys_int JOB_get_worker_id() {
