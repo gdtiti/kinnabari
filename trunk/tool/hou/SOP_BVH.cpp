@@ -111,6 +111,7 @@ public:
 			hRad.setF(bboxRad.z(), 2);
 		}
 
+		mTbl.clear();
 		delete mpList;
 	}
 };
