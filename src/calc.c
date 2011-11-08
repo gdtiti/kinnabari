@@ -1584,6 +1584,36 @@ void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
 }
 
+void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld) {
+	GEOM_AABB box;
+	QVEC ve;
+	QVEC vf;
+	QVEC v;
+	QMTX tm;
+	QMTX mmin;
+	QMTX mmax;
+	int i;
+
+	MTX_transpose_sr(tm, m);
+	box.min.qv = V4_load(tm[3]);
+	box.max.qv = box.min.qv;
+	for (i = 0; i < 3; ++i) {
+		v = V4_load(tm[i]);
+		ve = V4_mul(pOld->min.qv, v);
+		vf = V4_mul(pOld->max.qv, v);
+		V4_store(mmin[i], V4_min(ve, vf));
+		V4_store(mmax[i], V4_max(ve, vf));
+	}
+	MTX_transpose_sr(mmin, mmin);
+	MTX_transpose_sr(mmax, mmax);
+	for (i = 0; i < 3; ++i) {
+		box.min.qv = V4_add(box.min.qv, V4_load(mmin[i]));
+		box.max.qv = V4_add(box.max.qv, V4_load(mmax[i]));
+	}
+	pNew->min.qv = V4_set_w1(box.min.qv);
+	pNew->max.qv = V4_set_w1(box.max.qv);
+}
+
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1) {
 #if D_KISS
 	if (pBox0->min.x > pBox1->max.x || pBox0->max.x < pBox1->min.x) return 0;

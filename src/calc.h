@@ -280,6 +280,7 @@ float SPL_overhauser(QVEC pvec, float t);
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);
 void GEOM_aabb_init(GEOM_AABB* pBox);
+void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
 int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
 void GEOM_dop8_init(GEOM_DOP8* pDOP);
