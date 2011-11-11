@@ -2090,6 +2090,7 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	SH_calc_param(&sh_param, &sh_coef);
 	memcpy(&pGP->SH, &sh_param, sizeof(SH_PARAM));
 
+#ifdef D_RDRPROG_pix_toon
 	pGP->toon_sun_color.qv = V4_set(0.82f, 0.541106f, 0.4264f, 1.0f);
 	pGP->toon_sun_param.qv = V4_set(0.75f, 0.5f, 1.0f, 0.8f);
 	pGP->toon_sun_dir.qv = dir_vec.qv;
@@ -2097,6 +2098,7 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	pGP->toon_rim_param.qv = V4_set(0.2f, -0.15f, 5.0f, 1.0f);
 
 	pGP->toon_ctrl.qv = V4_set(0.1f, 0.0f, 0.0f, 0.0f);
+#endif
 }
 
 static void Rdr_recv_prologue(RDR_LAYER* pLyr) {
