@@ -44,6 +44,52 @@ TEX_PACKAGE* TEX_load(const char* name) {
 	return pPkg;
 }
 
+TEX_EXT_INFO* TEX_get_ext_info(TEX_PACKAGE* pPkg) {
+	TEX_EXT_INFO* pInfo = NULL;
+	if (pPkg && pPkg->pData && pPkg->pData->ext_info_offs) {
+		pInfo = (TEX_EXT_INFO*)D_INCR_PTR(pPkg->pData, pPkg->pData->ext_info_offs);
+	}
+	return pInfo;
+}
+
+sys_ui32* TEX_get_name_list(TEX_PACKAGE* pPkg) {
+	sys_ui32* pList = NULL;
+	TEX_EXT_INFO* pInfo = TEX_get_ext_info(pPkg);
+	if (pInfo && pInfo->ext_head_size && pInfo->tex_name_offs) {
+		pList = (sys_ui32*)D_INCR_PTR(pPkg->pData, pInfo->tex_name_offs);
+	}
+	return pList;
+}
+
+const char* TEX_get_name(TEX_PACKAGE* pPkg, int tex_no) {
+	const char* pName = NULL;
+	sys_ui32* pList = TEX_get_name_list(pPkg);
+	if (pList && (sys_uint)tex_no < pPkg->pData->nb_tex && pList[tex_no]) {
+		pName = (const char*)D_INCR_PTR(pPkg->pData, pList[tex_no]);
+	}
+	return pName;
+}
+
+int TEX_get_idx(TEX_PACKAGE* pPkg, const char* name) {
+	int idx = -1;
+	sys_ui32* pList = TEX_get_name_list(pPkg);
+	if (pList) {
+		int i;
+		int n = pPkg->pData->nb_tex;
+		for (i = 0; i < n; ++i) {
+			if (*pList) {
+				char* pName = (char*)D_INCR_PTR(pPkg->pData, *pList);
+				if (0 == strcmp(pName, name)) {
+					idx = i;
+					break;
+				}
+			}
+			++pList;
+		}
+	}
+	return idx;
+}
+
 void TEX_free(TEX_PACKAGE* pPkg) {
 	TEX_release(pPkg);
 	if (pPkg) {

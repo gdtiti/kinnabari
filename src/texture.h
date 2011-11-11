@@ -56,6 +56,10 @@ struct _TEX_PACKAGE {
 };
 
 D_EXTERN_FUNC TEX_PACKAGE* TEX_load(const char* name);
+D_EXTERN_FUNC TEX_EXT_INFO* TEX_get_ext_info(TEX_PACKAGE* pPkg);
+D_EXTERN_FUNC sys_ui32* TEX_get_name_list(TEX_PACKAGE* pPkg);
+D_EXTERN_FUNC const char* TEX_get_name(TEX_PACKAGE* pPkg, int tex_no);
+D_EXTERN_FUNC int TEX_get_idx(TEX_PACKAGE* pPkg, const char* name);
 D_EXTERN_FUNC void TEX_free(TEX_PACKAGE* pPkg);
 D_EXTERN_FUNC void TEX_init(TEX_PACKAGE* pPkg);
 D_EXTERN_FUNC void TEX_release(TEX_PACKAGE* pPkg);
