@@ -431,31 +431,32 @@ void MDL_disp(MODEL* pMdl) {
 
 	pGrp = pOmd->pGrp;
 	for (i = 0; i < n; ++i) {
-		pBatch = RDR_get_batch();
-		pBatch->vtx_prog = D_RDRPROG_vtx_skin_cast;
-		pBatch->pix_prog = D_RDRPROG_pix_cast;
-		pBatch->type = E_RDR_PRIMTYPE_TRILIST;
-		pBatch->pVtx = pOmd->pVtx;
-		pBatch->pIdx = pOmd->pIdx;
-		pBatch->start = pGrp->start;
-		pBatch->count = pGrp->count;
+		if (!D_BIT_CK(pMdl->pHide, i)) {
+			pBatch = RDR_get_batch();
+			pBatch->vtx_prog = D_RDRPROG_vtx_skin_cast;
+			pBatch->pix_prog = D_RDRPROG_pix_cast;
+			pBatch->type = E_RDR_PRIMTYPE_TRILIST;
+			pBatch->pVtx = pOmd->pVtx;
+			pBatch->pIdx = pOmd->pIdx;
+			pBatch->start = pGrp->start;
+			pBatch->count = pGrp->count;
 
-		pBatch->blend_state.on = 0;
-		pBatch->draw_state.cull = E_RDR_CULL_CCW;
-		pBatch->draw_state.msaa = 0;
+			pBatch->blend_state.on = 0;
+			pBatch->draw_state.cull = E_RDR_CULL_CCW;
+			pBatch->draw_state.msaa = 0;
 
-		pBatch->nb_param = 1;
-		pParam = RDR_get_param(pBatch->nb_param);
-		pBatch->pParam = pParam;
+			pBatch->nb_param = 1;
+			pParam = RDR_get_param(pBatch->nb_param);
+			pBatch->pParam = pParam;
 
-		pParam->count = nb_jnt*3;
-		pParam->id.type = E_RDR_PARAMTYPE_FVEC;
-		pParam->id.offs = D_RDR_GP_skin;
-		pParam->pVec = pSkin_mtx;
-		++pParam;
+			pParam->count = nb_jnt*3;
+			pParam->id.type = E_RDR_PARAMTYPE_FVEC;
+			pParam->id.offs = D_RDR_GP_skin;
+			pParam->pVec = pSkin_mtx;
+			++pParam;
 
-		RDR_put_batch(pBatch, 0, E_RDR_LAYER_CAST);
-
+			RDR_put_batch(pBatch, 0, E_RDR_LAYER_CAST);
+		}
 		++pGrp;
 	}
 
