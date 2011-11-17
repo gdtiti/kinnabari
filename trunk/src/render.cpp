@@ -1570,6 +1570,8 @@ void Apply_param(RDR_BATCH_PARAM* pParam) {
 	float* pDst_f;
 	sys_i32* pSrc_i;
 	sys_i32* pDst_i;
+	RDR_SAMPLER* pSrc_s;
+	RDR_SAMPLER* pDst_s;
 	sys_byte* pSrc_b;
 	sys_byte* pDst_b;
 	RDR_GPARAM* pGP = &g_rdr_param;
@@ -1606,6 +1608,15 @@ void Apply_param(RDR_BATCH_PARAM* pParam) {
 			pDst_i = (sys_i32*)D_INCR_PTR(pGP, D_RDR_GPTOP_INT) + pParam->id.offs;
 			for (i = 0; i < n; ++i) {
 				*pDst_i++ = *pSrc_i++;
+			}
+			break;
+		case E_RDR_PARAMTYPE_SMP:
+			pSrc_s = pParam->pSmp;
+			pDst_s = (RDR_SAMPLER*)D_INCR_PTR(pGP, D_RDR_GPTOP_SMP) + pParam->id.offs;
+			for (i = 0; i < n; ++i) {
+				memcpy(pDst_s, pSrc_s, sizeof(RDR_SAMPLER));
+				++pSrc_s;
+				++pDst_s;
 			}
 			break;
 		case E_RDR_PARAMTYPE_BOOL:
@@ -2201,6 +2212,10 @@ float* RDR_get_val_f(int n) {
 
 sys_i32* RDR_get_val_i(int n) {
 	return (sys_i32*)s_rdr.mDb_wk.Get_val(E_RDR_PARAMTYPE_INT, n);
+}
+
+RDR_SAMPLER* RDR_get_val_s(int n) {
+	return (RDR_SAMPLER*)s_rdr.mDb_wk.Get_val(E_RDR_PARAMTYPE_SMP, n);
 }
 
 sys_byte* RDR_get_val_b(int n) {

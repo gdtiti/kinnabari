@@ -260,11 +260,12 @@ typedef struct _RDR_GPARAM_INFO {
 
 typedef struct _RDR_BATCH_PARAM {
 	union {
-		void*     pVal;
-		UVEC*     pVec;
-		float*    pFloat;
-		sys_i32*  pInt;
-		sys_byte* pBool;
+		void*        pVal;
+		UVEC*        pVec;
+		float*       pFloat;
+		sys_i32*     pInt;
+		RDR_SAMPLER* pSmp;
+		sys_byte*    pBool;
 	};
 	RDR_GPARAM_ID id;
 	sys_ui16      count;
@@ -345,6 +346,7 @@ D_EXTERN_FUNC RDR_VIEW* RDR_get_view(void);
 D_EXTERN_FUNC UVEC* RDR_get_val_v(int n);
 D_EXTERN_FUNC float* RDR_get_val_f(int n);
 D_EXTERN_FUNC sys_i32* RDR_get_val_i(int n);
+D_EXTERN_FUNC RDR_SAMPLER* RDR_get_val_s(int n);
 D_EXTERN_FUNC sys_byte* RDR_get_val_b(int n);
 D_EXTERN_FUNC RDR_BATCH_PARAM* RDR_get_param(int n);
 D_EXTERN_FUNC RDR_BATCH* RDR_get_batch(void);
