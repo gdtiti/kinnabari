@@ -1,0 +1,9 @@
+solid
+skin
+solid_zbuf
+skin_zbuf
+solid_cast
+skin_cast
+solid_recv
+skin_recv
+img
