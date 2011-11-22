@@ -40,23 +40,12 @@ if exist %PROG_LIST% del %PROG_LIST%
 
 ::call dxpath.bat
 
-call :build_vtx solid
-call :build_vtx skin
-call :build_vtx solid_zbuf
-call :build_vtx skin_zbuf
-call :build_vtx solid_cast
-call :build_vtx skin_cast
-call :build_vtx solid_recv
-call :build_vtx skin_recv
-call :build_vtx img
+for /f %%i in (vtx_list.txt) do (
+	call :build_vtx %%i
+)
 
-call :build_pix default
-call :build_pix zbuf
-call :build_pix toon
-call :build_pix cast
-call :build_pix recv
-call :build_pix cc_levels
-call :build_pix cc_linear
-call :build_pix cc_lum
+for /f %%i in (pix_list.txt) do (
+	call :build_pix %%i
+)
 
 mkgpu
