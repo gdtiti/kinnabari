@@ -58,3 +58,8 @@ float4 Xform(VTX vtx, wmtx_t wm, out PIX pix) {
 	return Calc_cpos(wpos);
 }
 
+void Xform_tangent(VTX vtx, wmtx_t wm, float binorm_factor, inout PIX pix) {
+	pix.wtng = normalize(mul(wm, float4(vtx.tng.xyz, 0)).xyz);
+	pix.wbnm = normalize(cross(pix.wtng, pix.wnrm)) * binorm_factor;
+}
+

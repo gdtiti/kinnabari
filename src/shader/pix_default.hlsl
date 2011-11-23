@@ -8,7 +8,14 @@
 #include "material.h"
 
 void main(PIX pix : TEXCOORD, float4 clr : COLOR, out float4 c : COLOR) {
-	float3 wn = normalize(pix.wnrm.xyz);
-	c.rgb = (half3)g_base_color.rgb * clr.rgb * SH(wn);
-	c.a = 1.0f;
+	float3 wpos = pix.wpos.xyz;
+	float2 uv = pix.tex.xy;
+	float4 tex = tex2D(g_smp_base, uv);
+	float3 wn = NMap_normal(normalize(pix.wnrm), normalize(pix.wtng), normalize(pix.wbnm), g_smp_bump, uv);
+	float3 lc = Calc_omni_lights(wpos, wn) + SH(wn);
+	lc += clr.rgb;
+	c.rgb = tex.rgb * g_base_color.rgb * lc;
+	c.rgb += Simple_spec(wpos, wn, uv);
+	c.a = tex.a;
 }
+
