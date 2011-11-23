@@ -2231,7 +2231,7 @@ RDR_BATCH* RDR_get_batch() {
 	RDR_BATCH* pBatch = s_rdr.mDb_wk.Get_batch();
 	if (pBatch) {
 		pBatch->nb_param = 0;
-		pBatch->vtx_prog = D_RDRPROG_vtx_solid;
+		pBatch->vtx_prog = D_RDRPROG_vtx_default;
 		pBatch->pix_prog = D_RDRPROG_pix_default;
 		pBatch->blend_state.on = false;
 		pBatch->blend_state.op = E_RDR_BLENDOP_ADD;
