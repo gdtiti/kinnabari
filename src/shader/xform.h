@@ -6,7 +6,7 @@
 typedef row_major float3x4 wmtx_t;
 
 extern float4x4 g_view_proj : register(c0);
-extern float4 g_vtx_param; // depth_bias
+extern float4 g_vtx_param; // depth_bias, n_scale, n_bias
 extern wmtx_t g_world;
 extern wmtx_t g_skin[32];
 
@@ -48,10 +48,16 @@ wmtx_t Get_wmtx_skin(VTX vtx) {
 	return (wm0 + wm1 + wm2 + wm3);
 }
 
+float3 Decode_nvec(float3 vec) {
+	float scale = g_vtx_param.y;
+	float bias = g_vtx_param.z;
+	return vec*scale + bias;
+}
+
 float4 Xform(VTX vtx, wmtx_t wm, out PIX pix) {
 	pix = (PIX)0;
 	float3 wpos = mul(wm, float4(vtx.pos.xyz, 1));
-	float3 wnrm = normalize(mul(wm, float4(vtx.nrm.xyz, 0)).xyz);
+	float3 wnrm = normalize(mul(wm, float4(Decode_nvec(vtx.nrm.xyz), 0)).xyz);
 	pix.wpos = wpos;
 	pix.wnrm = wnrm;
 	pix.tex = vtx.tex;
@@ -59,7 +65,6 @@ float4 Xform(VTX vtx, wmtx_t wm, out PIX pix) {
 }
 
 void Xform_tangent(VTX vtx, wmtx_t wm, float binorm_factor, inout PIX pix) {
-	pix.wtng = normalize(mul(wm, float4(vtx.tng.xyz, 0)).xyz);
+	pix.wtng = normalize(mul(wm, float4(Decode_nvec(vtx.tng.xyz), 0)).xyz);
 	pix.wbnm = normalize(cross(pix.wtng, pix.wnrm)) * binorm_factor;
 }
-
