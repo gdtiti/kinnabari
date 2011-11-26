@@ -1015,6 +1015,10 @@ struct RDR_WORK {
 
 	sys_ui32 mClear_color;
 
+	float mDepth_bias;
+	float mNrm_scale;
+	float mNrm_bias;
+
 #if (D_VTX_FVEC_CK > 0)
 	CONST_CACHE<D_VTX_FVEC_CK> mVtx_fvec_cache;
 #endif
@@ -1042,6 +1046,10 @@ struct RDR_WORK {
 		mImg.Init();
 
 		mClear_color = D_RDR_ARGB32(0xFF, 0x55, 0x66, 0x77);
+
+		mDepth_bias = 0.0f;
+		mNrm_scale = 1.0f;
+		mNrm_bias = 0.0f;
 	}
 
 	void Set_vtx_const_f(const UVEC* pData, sys_uint org, sys_uint count) {
@@ -1779,7 +1787,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 		{0, D_FIELD_OFFS(RDR_VTX_SOLID, nrm), D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SOLID, tng), D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TANGENT, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SOLID, clr), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
-		{0, D_FIELD_OFFS(RDR_VTX_SOLID, tex), D3DDECLTYPE_FLOAT16_2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+		{0, D_FIELD_OFFS(RDR_VTX_SOLID, tex), D3DDECLTYPE_FLOAT16_4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
 		D3DDECL_END()
 	};
 	hres = pRdr->mpDev->CreateVertexDeclaration(elem_solid, &pRdr->mDecl.pSolid);
@@ -1791,7 +1799,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 		{0, D_FIELD_OFFS(RDR_VTX_SKIN, pos), D3DDECLTYPE_SHORT4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SKIN, nrm), D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SKIN, tng), D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TANGENT, 0},
-		{0, D_FIELD_OFFS(RDR_VTX_SKIN, tex), D3DDECLTYPE_FLOAT16_2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+		{0, D_FIELD_OFFS(RDR_VTX_SKIN, tex), D3DDECLTYPE_FLOAT16_4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SKIN, idx), D3DDECLTYPE_UBYTE4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_BLENDINDICES, 0},
 		{0, D_FIELD_OFFS(RDR_VTX_SKIN, wgt), D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_BLENDWEIGHT, 0},
 		D3DDECL_END()
@@ -2082,7 +2090,6 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	pDev->Clear(0, NULL, D3DCLEAR_TARGET, pRdr->mClear_color, 0.0f, 0);
 
 	pRdr->mDb_wk.Apply_exec_view();
-	pGP->vtx_param.qv = V4_set(/*dbias*/0.0f, 0.0f, 0.0f, 0.0f);
 	pGP->base_color.qv = V4_fill(1.0f);
 	pGP->world[0].qv = V4_load(g_identity[0]);
 	pGP->world[1].qv = V4_load(g_identity[1]);
@@ -2179,7 +2186,10 @@ static void Rdr_exec_cc() {
 
 void RDR_exec() {
 	RDR_WORK* pRdr = &s_rdr;
+	RDR_GPARAM* pGP = &g_rdr_param;
 	IDirect3DDevice9* pDev = pRdr->mpDev;
+
+	pGP->vtx_param.qv = V4_set(pRdr->mDepth_bias, pRdr->mNrm_scale, pRdr->mNrm_bias, 0.0f);
 
 	pRdr->mDb_wk.Get_exec_lyr(E_RDR_LAYER_ZBUF)->mpPrologue = Rdr_zbuf_prologue;
 	pRdr->mDb_wk.Get_exec_lyr(E_RDR_LAYER_ZBUF)->mpEpilogue = Rdr_zbuf_epilogue;
@@ -2196,6 +2206,12 @@ void RDR_exec() {
 
 	pDev->Present(NULL, NULL, NULL, NULL);
 	pRdr->mDb_wk.Flip();/////////////////////////
+}
+
+void RDR_set_nvec_encoding(float scale, float bias) {
+	RDR_WORK* pRdr = &s_rdr;
+	pRdr->mNrm_scale = scale;
+	pRdr->mNrm_bias = bias;
 }
 
 RDR_VIEW* RDR_get_view() {
