@@ -340,7 +340,7 @@ D_EXTERN_FUNC void RDR_reset(void);
 D_EXTERN_FUNC void RDR_init_thread_FPU(void);
 D_EXTERN_FUNC void RDR_begin(void);
 D_EXTERN_FUNC void RDR_exec(void);
-
+D_EXTERN_FUNC void RDR_set_nvec_encoding(float scale, float bias);
 D_EXTERN_FUNC RDR_VIEW* RDR_get_view(void);
 
 D_EXTERN_FUNC UVEC* RDR_get_val_v(int n);
