@@ -3,8 +3,10 @@
 // Released under the terms of Version 3 of the GNU General Public License.
 // See LICENSE.txt for details.
 
+#include "util.h"
 #include "xform.h"
 #include "light.h"
+#include "fog.h"
 #include "material.h"
 
 void main(PIX pix : TEXCOORD, float4 clr : COLOR, out float4 c : COLOR) {
@@ -16,6 +18,7 @@ void main(PIX pix : TEXCOORD, float4 clr : COLOR, out float4 c : COLOR) {
 	lc += clr.rgb;
 	c.rgb = tex.rgb * g_base_color.rgb * lc;
 	c.rgb += Simple_spec(wpos, wn, uv);
+	c.rgb = Fog(c.rgb, wpos, g_view_pos);
 	c.a = tex.a;
 }
 

@@ -3,8 +3,10 @@
 // Released under the terms of Version 3 of the GNU General Public License.
 // See LICENSE.txt for details.
 
+#include "util.h"
 #include "xform.h"
 #include "light.h"
+#include "fog.h"
 #include "material.h"
 
 extern float4 g_toon_sun_dir;
@@ -46,6 +48,7 @@ void main(PIX pix : TEXCOORD, float4 clr : COLOR, out float4 c : COLOR) {
 	c.rgb = saturate(lerp(c.rgb, c.rgb - (rim * ((float3)1.0 - g_toon_rim_color.rgb)), g_toon_rim_color.a));
 
 	c.rgb = lerp(c.rgb, basec*SH(wn), g_toon_ctrl.x);
+	c.rgb = Fog(c.rgb, pix.wpos.xyz, g_view_pos.xyz);
 
 	c.a = 1.0f;
 }
