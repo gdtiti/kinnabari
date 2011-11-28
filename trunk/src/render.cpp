@@ -993,6 +993,55 @@ struct RDR_IMG {
 };
 
 
+struct RDR_FOG_RANGE {
+	float start;
+	float end;
+};
+
+struct RDR_FOG_CURVE {
+	float p1;
+	float p2;
+};
+
+struct RDR_FOG {
+	RDR_FOG_RANGE mRange;
+	RDR_FOG_CURVE mCurve;
+	UVEC          mColor;
+
+	void Init() {
+		Set_range(0.0f, 100.0f);
+		Set_curve(1/3.0f, 2/3.0f);
+		Set_color(0.9f, 0.9f, 0.8f);
+		Set_density(0.0f);
+	}
+
+	void Set_range(float start, float end) {
+		mRange.start = start;
+		mRange.end = end;
+	}
+
+	void Set_curve(float p1, float p2) {
+		mCurve.p1 = p1;
+		mCurve.p2 = p2;
+	}
+
+	void Set_color(float r, float g, float b) {
+		mColor.r = r;
+		mColor.g = g;
+		mColor.b = b;
+	}
+
+	void Set_density(float d) {
+		mColor.a = d;
+	}
+
+	void Apply() {
+		RDR_GPARAM* pGP = &g_rdr_param;
+		pGP->fog_param.qv = V4_set(mRange.start, 1.0f/(mRange.end - mRange.start), mCurve.p1, mCurve.p2);
+		pGP->fog_color.qv = mColor.qv;
+	}
+};
+
 struct RDR_WORK {
 	IDirect3D9* mpD3D;
 	IDirect3DDevice9* mpDev;
@@ -1018,6 +1067,8 @@ struct RDR_WORK {
 	float mDepth_bias;
 	float mNrm_scale;
 	float mNrm_bias;
+
+	RDR_FOG mFog;
 
 #if (D_VTX_FVEC_CK > 0)
 	CONST_CACHE<D_VTX_FVEC_CK> mVtx_fvec_cache;
@@ -1050,6 +1101,8 @@ struct RDR_WORK {
 		mDepth_bias = 0.0f;
 		mNrm_scale = 1.0f;
 		mNrm_bias = 0.0f;
+
+		mFog.Init();
 	}
 
 	void Set_vtx_const_f(const UVEC* pData, sys_uint org, sys_uint count) {
@@ -2190,6 +2243,7 @@ void RDR_exec() {
 	IDirect3DDevice9* pDev = pRdr->mpDev;
 
 	pGP->vtx_param.qv = V4_set(pRdr->mDepth_bias, pRdr->mNrm_scale, pRdr->mNrm_bias, 0.0f);
+	pRdr->mFog.Apply();
 
 	pRdr->mDb_wk.Get_exec_lyr(E_RDR_LAYER_ZBUF)->mpPrologue = Rdr_zbuf_prologue;
 	pRdr->mDb_wk.Get_exec_lyr(E_RDR_LAYER_ZBUF)->mpEpilogue = Rdr_zbuf_epilogue;
@@ -2212,6 +2266,22 @@ void RDR_set_nvec_encoding(float scale, float bias) {
 	RDR_WORK* pRdr = &s_rdr;
 	pRdr->mNrm_scale = scale;
 	pRdr->mNrm_bias = bias;
+}
+
+void RDR_set_fog_range(float start, float end) {
+	s_rdr.mFog.Set_range(start, end);
+}
+
+void RDR_set_fog_curve(float p1, float p2) {
+	s_rdr.mFog.Set_curve(p1, p2);
+}
+
+void RDR_set_fog_color(float r, float g, float b) {
+	s_rdr.mFog.Set_color(r, g, b);
+}
+
+void RDR_set_fog_density(float d) {
+	s_rdr.mFog.Set_density(d);
 }
 
 RDR_VIEW* RDR_get_view() {
