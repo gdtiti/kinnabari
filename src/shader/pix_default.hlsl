@@ -9,7 +9,7 @@
 #include "fog.h"
 #include "material.h"
 
-void main(PIX pix : TEXCOORD, float4 clr : COLOR, out float4 c : COLOR) {
+void main(PIX pix : TEXCOORD, float4 clr : TEXCOORD5, out float4 c : COLOR) {
 	float3 wpos = pix.wpos.xyz;
 	float2 uv = pix.tex.xy;
 	float4 tex = tex2D(g_smp_base, uv);

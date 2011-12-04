@@ -6,9 +6,10 @@
 #include "xform.h"
 #include "material.h"
 
-void main(VTX vtx, out float4 cpos : POSITION, out PIX pix : TEXCOORD, out float4 clr : COLOR) {
+void main(VTX vtx, out float4 cpos : POSITION, out PIX pix : TEXCOORD, out float4 clr : TEXCOORD5) {
 	wmtx_t wm = Get_wmtx(vtx);
 	cpos = Xform(vtx, wm, pix);
 	Xform_tangent(vtx, wm, g_bump_param.x, pix);
-	clr = vtx.clr;
+	float3 hrgb = vtx.clr.rgb / vtx.clr.a;
+	clr = float4(hrgb, 1.0f);
 }
