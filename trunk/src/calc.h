@@ -249,6 +249,8 @@ QVEC QUAT_slerp(QVEC a, QVEC b, float bias);
 
 sys_ui32 CLR_f2i(QVEC cv);
 QVEC CLR_i2f(sys_ui32 ci);
+QVEC CLR_HDR_encode(QVEC qrgb);
+QVEC CLR_HDR_decode(QVEC qhdr);
 QVEC CLR_RGB_to_HSV(QVEC qrgb);
 QVEC CLR_HSV_to_RGB(QVEC qhsv);
 QVEC CLR_RGB_to_YCbCr(QVEC qrgb);
@@ -259,6 +261,8 @@ QVEC CLR_XYZ_to_Lab(QVEC qxyz, MTX* pMtx);
 QVEC CLR_Lab_to_XYZ(QVEC qlab, MTX* pMtx);
 QVEC CLR_RGB_to_Lab(QVEC qxyz, MTX* pMtx);
 QVEC CLR_Lab_to_RGB(QVEC qlab, MTX* pRGB2XYZ, MTX* pXYZ2RGB);
+QVEC CLR_Lab_to_LCH(QVEC qlab);
+QVEC CLR_LCH_to_Lab(QVEC qlch);
 float CLR_get_luma(QVEC qrgb);
 float CLR_get_luminance(QVEC qrgb, MTX* pMtx);
 void CLR_calc_XYZ_transform(MTX* pRGB2XYZ, MTX* pXYZ2RGB, QVEC* pPrim, QVEC* pWhite);
