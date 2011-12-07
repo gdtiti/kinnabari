@@ -1218,6 +1218,20 @@ QVEC CLR_i2f(sys_ui32 ci) {
 	return V4_scale(cv.qv, 1.0f/255);
 }
 
+QVEC CLR_HDR_encode(QVEC qrgb) {
+	UVEC cv;
+	float s;
+	cv.qv = qrgb;
+	s = 1.0f / F_max(F_max(F_max(cv.r, cv.g), cv.b), 1.0f);
+	cv.qv = V4_scale(qrgb, s);
+	cv.w = s;
+	return cv.qv;
+}
+
+QVEC CLR_HDR_decode(QVEC qhdr) {
+	return V4_set_w1(V4_scale(qhdr, 1.0f/V4_at(qhdr, 3)));
+}
+
 QVEC CLR_RGB_to_HSV(QVEC qrgb) {
 	UVEC rgb;
 	float h, s, v, cmin, cmax, diff;
@@ -1382,6 +1396,32 @@ QVEC CLR_RGB_to_Lab(QVEC qrgb, MTX* pMtx) {
 
 QVEC CLR_Lab_to_RGB(QVEC qlab, MTX* pRGB2XYZ, MTX* pXYZ2RGB) {
 	return CLR_XYZ_to_RGB(CLR_Lab_to_XYZ(qlab, pRGB2XYZ), pXYZ2RGB);
+}
+
+QVEC CLR_Lab_to_LCH(QVEC qlab) {
+	UVEC Lab;
+	float L, a, b, C, H;
+
+	Lab.qv = qlab;
+	L = Lab.x;
+	a = Lab.y;
+	b = Lab.z;
+	C = sqrtf(D_SQ(a) + D_SQ(b));
+	H = atan2f(b, a);
+	return V4_set_vec(L, C, H);
+}
+
+QVEC CLR_LCH_to_Lab(QVEC qlch) {
+	UVEC LCH;
+	float L, C, H;
+	float sc[2];
+
+	LCH.qv = qlch;
+	L = LCH.x;
+	C = LCH.y;
+	H = LCH.z;
+	SinCos(H, sc);
+	return V4_mul(V4_set_vec(L, C, C), V4_set_vec(1.0f, sc[1], sc[0]));
 }
 
 float CLR_get_luma(QVEC qrgb) {
