@@ -1,4 +1,5 @@
 default
+default_skin
 solid
 skin
 solid_zbuf
