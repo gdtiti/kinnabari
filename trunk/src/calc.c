@@ -1625,33 +1625,39 @@ void GEOM_aabb_init(GEOM_AABB* pBox) {
 }
 
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld) {
-	GEOM_AABB box;
+	QVEC va;
 	QVEC ve;
 	QVEC vf;
-	QVEC v;
-	QMTX tm;
-	QMTX mmin;
-	QMTX mmax;
-	int i;
+	QVEC omin;
+	QVEC omax;
+	QVEC nmin;
+	QVEC nmax;
 
-	MTX_transpose_sr(tm, m);
-	box.min.qv = V4_load(tm[3]);
-	box.max.qv = box.min.qv;
-	for (i = 0; i < 3; ++i) {
-		v = V4_load(tm[i]);
-		ve = V4_mul(pOld->min.qv, v);
-		vf = V4_mul(pOld->max.qv, v);
-		V4_store(mmin[i], V4_min(ve, vf));
-		V4_store(mmax[i], V4_max(ve, vf));
-	}
-	MTX_transpose_sr(mmin, mmin);
-	MTX_transpose_sr(mmax, mmax);
-	for (i = 0; i < 3; ++i) {
-		box.min.qv = V4_add(box.min.qv, V4_load(mmin[i]));
-		box.max.qv = V4_add(box.max.qv, V4_load(mmax[i]));
-	}
-	pNew->min.qv = V4_set_w1(box.min.qv);
-	pNew->max.qv = V4_set_w1(box.max.qv);
+	omin = pOld->min.qv;
+	omax = pOld->max.qv;
+	nmin = V4_load(m[3]);
+	nmax = nmin;
+
+	va = V4_load(m[0]);
+	ve = V4_mul(va, D_V4_FILL_ELEM(omin, 0));
+	vf = V4_mul(va, D_V4_FILL_ELEM(omax, 0));
+	nmin = V4_add(nmin, V4_min(ve, vf));
+	nmax = V4_add(nmax, V4_max(ve, vf));
+
+	va = V4_load(m[1]);
+	ve = V4_mul(va, D_V4_FILL_ELEM(omin, 1));
+	vf = V4_mul(va, D_V4_FILL_ELEM(omax, 1));
+	nmin = V4_add(nmin, V4_min(ve, vf));
+	nmax = V4_add(nmax, V4_max(ve, vf));
+
+	va = V4_load(m[2]);
+	ve = V4_mul(va, D_V4_FILL_ELEM(omin, 2));
+	vf = V4_mul(va, D_V4_FILL_ELEM(omax, 2));
+	nmin = V4_add(nmin, V4_min(ve, vf));
+	nmax = V4_add(nmax, V4_max(ve, vf));
+
+	pNew->min.qv = V4_set_w1(nmin);
+	pNew->max.qv = V4_set_w1(nmax);
 }
 
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1) {

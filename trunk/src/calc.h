@@ -87,6 +87,8 @@
 #	define D_V4_SHUFFLE(_v, _ix, _iy, _iz, _iw) _mm_shuffle_ps(_v, _v, (_ix)|((_iy)<<2)|((_iz)<<4)|((_iw)<<6))
 #endif
 
+#define D_V4_FILL_ELEM(_v, _idx) D_V4_SHUFFLE(_v, _idx, _idx, _idx, _idx)
+
 #define D_MTX_POS(_name) union {QMTX _name; struct {float sr_mtx[3][4]; UVEC pos;};}
 
 typedef float VEC[3];
