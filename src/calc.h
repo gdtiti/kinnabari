@@ -149,6 +149,12 @@ typedef union _GEOM_PLANE {
 	struct {float a, b, c, d;};
 } GEOM_PLANE;
 
+typedef struct _GEOM_FRUSTUM {
+	UVEC pnt[8];
+	UVEC nrm[6];
+	GEOM_PLANE pln[6];
+} GEOM_FRUSTUM;
+
 D_EXTERN_DATA QMTX g_identity;
 
 #ifdef __cplusplus
@@ -285,6 +291,8 @@ float SPL_overhauser(QVEC pvec, float t);
 
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);
+QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
+QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
@@ -298,6 +306,8 @@ int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* 
 int GEOM_seg_polyhedron_intersect(QVEC p0, QVEC p1, GEOM_PLANE* pPln, int n, QVEC* pRes);
 int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox);
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
+void GEOM_frustum_init(GEOM_FRUSTUM* pVol, MTX m, float fovy, float aspect, float znear, float zfar);
+int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
 
 #ifdef __cplusplus
 }

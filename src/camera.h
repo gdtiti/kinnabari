@@ -46,12 +46,6 @@ typedef struct _LANE_ANIM {
 	KFR_GROUP* pGrp_tgt;
 } LANE_ANIM;
 
-typedef struct _FRUSTUM {
-	UVEC pnt[8];
-	UVEC nrm[6];
-	GEOM_PLANE pln[6];
-} FRUSTUM;
-
 typedef struct _CAM_CTRL {
 	UVEC pos_offs;
 	UVEC tgt_offs;
@@ -72,7 +66,7 @@ typedef struct _CAMERA {
 	UVEC tgt;
 	UVEC up;
 	UVEC prev_pos;
-	FRUSTUM frustum;
+	GEOM_FRUSTUM frustum;
 	CAM_CTRL ctrl;
 	float aspect;
 	float fovy;

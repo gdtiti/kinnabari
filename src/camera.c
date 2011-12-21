@@ -77,42 +77,7 @@ static QVEC Cam_frustum_norm(QVEC v0, QVEC v1, QVEC v2) {
 }
 
 static void Cam_update_frustum(CAMERA* pCam) {
-	int i;
-	float t;
-	float x, y, z;
-	FRUSTUM* pVol = &pCam->frustum;
-
-	t = tanf(pCam->fovy * 0.5f);
-	z = pCam->znear;
-	y = t * z;
-	x = y * pCam->aspect;
-	pVol->pnt[0].qv = V4_set(-x,  y, -z, 1.0f);
-	pVol->pnt[1].qv = V4_set( x,  y, -z, 1.0f);
-	pVol->pnt[2].qv = V4_set( x, -y, -z, 1.0f);
-	pVol->pnt[3].qv = V4_set(-x, -y, -z, 1.0f);
-	z = pCam->zfar;
-	y = t * z;
-	x = y * pCam->aspect;
-	pVol->pnt[4].qv = V4_set(-x,  y, -z, 1.0f);
-	pVol->pnt[5].qv = V4_set( x,  y, -z, 1.0f);
-	pVol->pnt[6].qv = V4_set( x, -y, -z, 1.0f);
-	pVol->pnt[7].qv = V4_set(-x, -y, -z, 1.0f);
-	pVol->nrm[0].qv = Cam_frustum_norm(pVol->pnt[0].qv, pVol->pnt[1].qv, pVol->pnt[3].qv); /* near */
-	pVol->nrm[1].qv = Cam_frustum_norm(pVol->pnt[0].qv, pVol->pnt[3].qv, pVol->pnt[4].qv); /* left */
-	pVol->nrm[2].qv = Cam_frustum_norm(pVol->pnt[0].qv, pVol->pnt[4].qv, pVol->pnt[5].qv); /* top */
-	pVol->nrm[3].qv = Cam_frustum_norm(pVol->pnt[6].qv, pVol->pnt[2].qv, pVol->pnt[1].qv); /* right */
-	pVol->nrm[4].qv = Cam_frustum_norm(pVol->pnt[6].qv, pVol->pnt[7].qv, pVol->pnt[3].qv); /* bottom */
-	pVol->nrm[5].qv = Cam_frustum_norm(pVol->pnt[6].qv, pVol->pnt[5].qv, pVol->pnt[4].qv); /* far */
-	for (i = 0; i < 8; ++i) {
-		pVol->pnt[i].qv = MTX_apply(pCam->mtx_view_i, pVol->pnt[i].qv);
-	}
-	for (i = 0; i < 6; ++i) {
-		pVol->nrm[i].qv = MTX_apply(pCam->mtx_view_i, pVol->nrm[i].qv);
-	}
-	for (i = 0; i < 6; ++i) {
-		static int vtx_no[] = {0, 0, 0, 6, 6, 6};
-		pVol->pln[i].qv = GEOM_get_plane(pVol->pnt[vtx_no[i]].qv, pVol->nrm[i].qv);
-	}
+	GEOM_frustum_init(&pCam->frustum, pCam->mtx_view_i, pCam->fovy, pCam->aspect, pCam->znear, pCam->zfar);
 }
 
 void CAM_update(CAMERA* pCam) {
@@ -143,7 +108,7 @@ int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox) {
 	QVEC cvec;
 	QVEC rvec;
 	QVEC vec;
-	FRUSTUM* pVol = &pCam->frustum;
+	GEOM_FRUSTUM* pVol = &pCam->frustum;
 
 	cvec = V4_scale(V4_add(pBox->min.qv, pBox->max.qv), 0.5f);
 	rvec = V4_sub(pBox->max.qv, cvec);
@@ -158,66 +123,9 @@ int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox) {
 	return 0;
 }
 
-#define _D_MK_AABB_VTX(_px, _py, _pz) V4_set_pnt(pBox->##_px.x, pBox->##_py.y, pBox->##_pz.z)
-#define _D_BOX_EDGE_CK(_p0x, _p0y, _p0z, _p1x, _p1y, _p1z) \
-	a = _D_MK_AABB_VTX(_p0x, _p0y, _p0z); \
-	b = _D_MK_AABB_VTX(_p1x, _p1y, _p1z); \
-	if (GEOM_seg_polyhedron_intersect(a, b, pVol->pln, 6, NULL)) return 0
-
-#define _D_HEX_EDGE_CK(i0, i1) if (GEOM_seg_polyhedron_intersect(pVol->pnt[i0].qv, pVol->pnt[i1].qv, box_vol, 6, NULL)) return 0
 
 int CAM_cull_box_ex(CAMERA* pCam, GEOM_AABB* pBox) {
-	QVEC a;
-	QVEC b;
-	GEOM_PLANE box_vol[6];
-	FRUSTUM* pVol = &pCam->frustum;
-	static QVEC box_nml[6] = {
-		{-1, 0, 0, 0},
-		{0, -1, 0, 0},
-		{0, 0, -1, 0},
-		{1, 0, 0, 0},
-		{0, 1, 0, 0},
-		{0, 0, 1, 0}
-	};
-
-	_D_BOX_EDGE_CK(min, min, min,  max, min, min);
-	_D_BOX_EDGE_CK(max, min, min,  max, min, max);
-	_D_BOX_EDGE_CK(max, min, max,  min, min, max);
-	_D_BOX_EDGE_CK(min, min, max,  min, min, min);
-
-	_D_BOX_EDGE_CK(min, max, min,  max, max, min);
-	_D_BOX_EDGE_CK(max, max, min,  max, max, max);
-	_D_BOX_EDGE_CK(max, max, max,  min, max, max);
-	_D_BOX_EDGE_CK(min, max, max,  min, max, min);
-
-	_D_BOX_EDGE_CK(min, min, min,  min, max, min);
-	_D_BOX_EDGE_CK(max, min, min,  max, max, min);
-	_D_BOX_EDGE_CK(max, min, max,  max, max, max);
-	_D_BOX_EDGE_CK(min, min, max,  min, max, max);
-
-	box_vol[0].qv = GEOM_get_plane(pBox->min.qv, box_nml[0]);
-	box_vol[1].qv = GEOM_get_plane(pBox->min.qv, box_nml[1]);
-	box_vol[2].qv = GEOM_get_plane(pBox->min.qv, box_nml[2]);
-	box_vol[3].qv = GEOM_get_plane(pBox->max.qv, box_nml[3]);
-	box_vol[4].qv = GEOM_get_plane(pBox->max.qv, box_nml[4]);
-	box_vol[5].qv = GEOM_get_plane(pBox->max.qv, box_nml[5]);
-
-	_D_HEX_EDGE_CK(0, 1);
-	_D_HEX_EDGE_CK(1, 2);
-	_D_HEX_EDGE_CK(2, 3);
-	_D_HEX_EDGE_CK(3, 0);
-
-	_D_HEX_EDGE_CK(4, 5);
-	_D_HEX_EDGE_CK(5, 6);
-	_D_HEX_EDGE_CK(6, 7);
-	_D_HEX_EDGE_CK(7, 4);
-
-	_D_HEX_EDGE_CK(0, 4);
-	_D_HEX_EDGE_CK(1, 5);
-	_D_HEX_EDGE_CK(2, 6);
-	_D_HEX_EDGE_CK(3, 7);
-
-	return 1;
+	return !GEOM_frustum_aabb_check(&pCam->frustum, pBox);
 }
 
 void CAM_load_data(CAMERA* pCam, const char* fname_kfr, const char* fname_lane) {
