@@ -118,7 +118,7 @@ int BVH_get_node_id(BVH_HEAD* pBVH, BVH_NODE* pNode) {
 D_FORCE_INLINE static int Node_hit_ck(OBSTACLE* pObst, BVH_NODE* pNode, BVH_WORK* pWk) {
 	GEOM_AABB* pBox = BVH_get_node_bbox(pObst->pBVH, BVH_get_node_id(pObst->pBVH, pNode));
 	if (GEOM_aabb_overlap(&pWk->bbox, pBox)) {
-		if (GEOM_seg_aabb_test(pWk->pQry->p0.qv, pWk->pQry->p1.qv, pBox)) {
+		if (GEOM_seg_aabb_check(pWk->pQry->p0.qv, pWk->pQry->p1.qv, pBox)) {
 			return 1;
 		}
 	}

@@ -1893,7 +1893,7 @@ _exit:
 	return res;
 }
 
-int GEOM_seg_aabb_test(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
+int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
 	QVEC e;
 	QVEC v;
 	QVEC m;
