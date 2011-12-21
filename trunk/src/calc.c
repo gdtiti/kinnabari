@@ -1619,6 +1619,14 @@ QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2) {
 	return pnt;
 }
 
+QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2) {
+	return V4_normalize(V4_cross(V4_sub(v0, v1), V4_sub(v2, v1)));
+}
+
+QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2) {
+	return V4_normalize(V4_cross(V4_sub(v1, v0), V4_sub(v2, v0)));
+}
+
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
@@ -1943,3 +1951,87 @@ int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord) {
 	}
 	return res;
 }
+
+void GEOM_frustum_init(GEOM_FRUSTUM* pVol, MTX m, float fovy, float aspect, float znear, float zfar) {
+	int i;
+	float t;
+	float x, y, z;
+
+	t = tanf(fovy * 0.5f);
+	z = znear;
+	y = t * z;
+	x = y * aspect;
+	pVol->pnt[0].qv = V4_set(-x,  y, -z, 1.0f);
+	pVol->pnt[1].qv = V4_set( x,  y, -z, 1.0f);
+	pVol->pnt[2].qv = V4_set( x, -y, -z, 1.0f);
+	pVol->pnt[3].qv = V4_set(-x, -y, -z, 1.0f);
+	z = zfar;
+	y = t * z;
+	x = y * aspect;
+	pVol->pnt[4].qv = V4_set(-x,  y, -z, 1.0f);
+	pVol->pnt[5].qv = V4_set( x,  y, -z, 1.0f);
+	pVol->pnt[6].qv = V4_set( x, -y, -z, 1.0f);
+	pVol->pnt[7].qv = V4_set(-x, -y, -z, 1.0f);
+	pVol->nrm[0].qv = GEOM_tri_norm_cw(pVol->pnt[0].qv, pVol->pnt[1].qv, pVol->pnt[3].qv); /* near */
+	pVol->nrm[1].qv = GEOM_tri_norm_cw(pVol->pnt[0].qv, pVol->pnt[3].qv, pVol->pnt[4].qv); /* left */
+	pVol->nrm[2].qv = GEOM_tri_norm_cw(pVol->pnt[0].qv, pVol->pnt[4].qv, pVol->pnt[5].qv); /* top */
+	pVol->nrm[3].qv = GEOM_tri_norm_cw(pVol->pnt[6].qv, pVol->pnt[2].qv, pVol->pnt[1].qv); /* right */
+	pVol->nrm[4].qv = GEOM_tri_norm_cw(pVol->pnt[6].qv, pVol->pnt[7].qv, pVol->pnt[3].qv); /* bottom */
+	pVol->nrm[5].qv = GEOM_tri_norm_cw(pVol->pnt[6].qv, pVol->pnt[5].qv, pVol->pnt[4].qv); /* far */
+	for (i = 0; i < 8; ++i) {
+		pVol->pnt[i].qv = MTX_apply(m, pVol->pnt[i].qv);
+	}
+	for (i = 0; i < 6; ++i) {
+		pVol->nrm[i].qv = MTX_apply(m, pVol->nrm[i].qv);
+	}
+	for (i = 0; i < 6; ++i) {
+		static int vtx_no[] = {0, 0, 0, 6, 6, 6};
+		pVol->pln[i].qv = GEOM_get_plane(pVol->pnt[vtx_no[i]].qv, pVol->nrm[i].qv);
+	}
+}
+
+#define _D_MK_AABB_VTX(_px, _py, _pz) V4_set_pnt(pBox->##_px.x, pBox->##_py.y, pBox->##_pz.z)
+#define _D_BOX_EDGE_CK(_p0x, _p0y, _p0z, _p1x, _p1y, _p1z) \
+	a = _D_MK_AABB_VTX(_p0x, _p0y, _p0z); \
+	b = _D_MK_AABB_VTX(_p1x, _p1y, _p1z); \
+	if (GEOM_seg_polyhedron_intersect(a, b, pVol->pln, 6, NULL)) return 1
+
+#define _D_HEX_EDGE_CK(i0, i1) if (GEOM_seg_aabb_check(pVol->pnt[i0].qv, pVol->pnt[i1].qv, pBox)) return 1
+
+int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox) {
+	QVEC a;
+	QVEC b;
+
+	_D_HEX_EDGE_CK(0, 1);
+	_D_HEX_EDGE_CK(1, 2);
+	_D_HEX_EDGE_CK(2, 3);
+	_D_HEX_EDGE_CK(3, 0);
+
+	_D_HEX_EDGE_CK(4, 5);
+	_D_HEX_EDGE_CK(5, 6);
+	_D_HEX_EDGE_CK(6, 7);
+	_D_HEX_EDGE_CK(7, 4);
+
+	_D_HEX_EDGE_CK(0, 4);
+	_D_HEX_EDGE_CK(1, 5);
+	_D_HEX_EDGE_CK(2, 6);
+	_D_HEX_EDGE_CK(3, 7);
+
+	_D_BOX_EDGE_CK(min, min, min,  max, min, min);
+	_D_BOX_EDGE_CK(max, min, min,  max, min, max);
+	_D_BOX_EDGE_CK(max, min, max,  min, min, max);
+	_D_BOX_EDGE_CK(min, min, max,  min, min, min);
+
+	_D_BOX_EDGE_CK(min, max, min,  max, max, min);
+	_D_BOX_EDGE_CK(max, max, min,  max, max, max);
+	_D_BOX_EDGE_CK(max, max, max,  min, max, max);
+	_D_BOX_EDGE_CK(min, max, max,  min, max, min);
+
+	_D_BOX_EDGE_CK(min, min, min,  min, max, min);
+	_D_BOX_EDGE_CK(max, min, min,  max, max, min);
+	_D_BOX_EDGE_CK(max, min, max,  max, max, max);
+	_D_BOX_EDGE_CK(min, min, max,  min, max, max);
+
+	return 0;
+}
+
