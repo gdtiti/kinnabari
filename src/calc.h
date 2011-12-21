@@ -296,7 +296,7 @@ float GEOM_tri_dist2(QVEC pos, QVEC* pVtx);
 float GEOM_quad_dist2(QVEC pos, QVEC* pVtx);
 int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* pHit_nml);
 int GEOM_seg_polyhedron_intersect(QVEC p0, QVEC p1, GEOM_PLANE* pPln, int n, QVEC* pRes);
-int GEOM_seg_aabb_test(QVEC p0, QVEC p1, GEOM_AABB* pBox);
+int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox);
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
 
 #ifdef __cplusplus
