@@ -94,7 +94,6 @@ void TEX_free(TEX_PACKAGE* pPkg) {
 	TEX_release(pPkg);
 	if (pPkg) {
 		SYS_free(pPkg->pData);
-		SYS_free(pPkg->pList);
 		SYS_free(pPkg);
 	}
 }
