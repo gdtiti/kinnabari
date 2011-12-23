@@ -424,6 +424,93 @@ const char* CFG_get(const char* pName) {
 }
 
 
+UTL_GEOMETRY* GMT_load(const char* fname) {
+	GMT_HEAD* pHead;
+	UTL_GEOMETRY* pGeo = NULL;
+
+	pHead = SYS_load(fname);
+	if (pHead && pHead->magic == D_FOURCC('G','M','T','\0')) {
+		pGeo = (UTL_GEOMETRY*)SYS_malloc(sizeof(UTL_GEOMETRY));
+		pGeo->pData = pHead;
+	}
+	return pGeo;
+}
+
+void GMT_free(UTL_GEOMETRY* pGeo) {
+	if (pGeo) {
+		SYS_free(pGeo->pData);
+		SYS_free(pGeo);
+	}
+}
+
+UVEC* GMT_get_pnt(UTL_GEOMETRY* pGeo, int i) {
+	if (!pGeo || !pGeo->pData) return NULL;
+	if ((sys_uint)i >= pGeo->pData->nb_pnt) return NULL;
+	return (UVEC*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_pnt) + i;
+}
+
+GMT_POLY* GMT_get_pol(UTL_GEOMETRY* pGeo, int i) {
+	sys_ui32* pOffs;
+	if (!pGeo || !pGeo->pData) return NULL;
+	if ((sys_uint)i >= pGeo->pData->nb_pol) return NULL;
+	pOffs = (sys_ui32*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_pol);
+	return (GMT_POLY*)D_INCR_PTR(pOffs, pOffs[i]);
+}
+
+const char* GMT_get_str(UTL_GEOMETRY* pGeo, int offs) {
+	if (!pGeo || !pGeo->pData) return NULL;
+	return (const char*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_str + offs);
+}
+
+GMT_ATTR_INFO* GMT_get_attr_info_glb(UTL_GEOMETRY* pGeo) {
+	if (!pGeo || !pGeo->pData) return NULL;
+	return (GMT_ATTR_INFO*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_glb_attr);
+}
+
+GMT_ATTR_INFO* GMT_get_attr_info_pnt(UTL_GEOMETRY* pGeo) {
+	if (!pGeo || !pGeo->pData) return NULL;
+	return (GMT_ATTR_INFO*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_pnt_attr);
+}
+
+GMT_ATTR_INFO* GMT_get_attr_info_pol(UTL_GEOMETRY* pGeo) {
+	if (!pGeo || !pGeo->pData) return NULL;
+	return (GMT_ATTR_INFO*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_pol_attr);
+}
+
+void* GMT_get_attr_val_glb(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo) {
+	void* pVal = NULL;
+	GMT_ATTR_INFO* pTop = GMT_get_attr_info_glb(pGeo);
+	if (pInfo && pTop) {
+		int n = pGeo->pData->nb_glb_attr;
+		int size = pTop[n-1].offs + pTop[n-1].size*4;
+		pVal = D_INCR_PTR(&pTop[n], pInfo->offs);
+	}
+	return pVal;
+}
+
+void* GMT_get_attr_val_pnt(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pnt_id) {
+	void* pVal = NULL;
+	GMT_ATTR_INFO* pTop = GMT_get_attr_info_pnt(pGeo);
+	if (pInfo && pTop) {
+		int n = pGeo->pData->nb_pnt_attr;
+		int size = pTop[n-1].offs + pTop[n-1].size*4;
+		pVal = D_INCR_PTR(&pTop[n], size*pnt_id + pInfo->offs);
+	}
+	return pVal;
+}
+
+void* GMT_get_attr_val_pol(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pol_id) {
+	void* pVal = NULL;
+	GMT_ATTR_INFO* pTop = GMT_get_attr_info_pol(pGeo);
+	if (pInfo && pTop) {
+		int n = pGeo->pData->nb_pol_attr;
+		int size = pTop[n-1].offs + pTop[n-1].size*4;
+		pVal = D_INCR_PTR(&pTop[n], size*pol_id + pInfo->offs);
+	}
+	return pVal;
+}
+
+
 float UTL_frand01() {
 	union {sys_ui32 u32; float f32;} d32;
 	sys_uint r0 = rand() & 0xFF;

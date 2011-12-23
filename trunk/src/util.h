@@ -60,6 +60,46 @@ typedef struct _DICT {
 
 typedef void (*DICT_FUNC)(DICT* pDict, const char* pKey, DICT_VAL val, void* pData);
 
+
+typedef enum _E_GMTATTRTYPE {
+	E_GMTATTRTYPE_INT    = 0,
+	E_GMTATTRTYPE_FLOAT  = 1,
+	E_GMTATTRTYPE_STRING = 2
+} E_GMTATTRTYPE;
+
+typedef struct _GMT_HEAD {
+	sys_ui32  magic;
+	sys_ui32  nb_glb_attr;
+	sys_ui32  nb_pnt_attr;
+	sys_ui32  nb_pol_attr;
+	sys_ui32  nb_pnt;
+	sys_ui32  nb_pol;
+	sys_ui32  offs_glb_attr;
+	sys_ui32  offs_pnt_attr;
+	sys_ui32  offs_pol_attr;
+	sys_ui32  offs_pnt;
+	sys_ui32  offs_pol;
+	sys_ui32  offs_str;
+	GEOM_AABB bbox;
+} GMT_HEAD;
+
+typedef struct _GMT_ATTR_INFO {
+	sys_ui32 name;
+	sys_ui32 offs;
+	sys_ui16 type;
+	sys_ui16 size;
+} GMT_ATTR_INFO;
+
+typedef struct _GMT_POLY {
+	sys_ui32 nb_vtx;
+	sys_ui32 idx[1];
+} GMT_POLY;
+
+typedef struct _UTL_GEOMETRY {
+	GMT_HEAD* pData;
+} UTL_GEOMETRY;
+
+
 D_EXTERN_FUNC SYM_POOL* DICT_pool_create(void);
 D_EXTERN_FUNC void DICT_pool_destroy(SYM_POOL* pSelf);
 D_EXTERN_FUNC sys_int DICT_pool_get_free(SYM_POOL* pSelf);
@@ -83,6 +123,18 @@ D_EXTERN_FUNC void DICT_foreach(DICT* pDict, DICT_FUNC func, void* pData);
 
 D_EXTERN_FUNC void CFG_init(const char* fname);
 D_EXTERN_FUNC const char* CFG_get(const char* pName);
+
+D_EXTERN_FUNC UTL_GEOMETRY* GMT_load(const char* fname);
+D_EXTERN_FUNC void GMT_free(UTL_GEOMETRY* pGeo);
+D_EXTERN_FUNC UVEC* GMT_get_pnt(UTL_GEOMETRY* pGeo, int i);
+D_EXTERN_FUNC GMT_POLY* GMT_get_pol(UTL_GEOMETRY* pGeo, int i);
+D_EXTERN_FUNC const char* GMT_get_str(UTL_GEOMETRY* pGeo, int offs);
+D_EXTERN_FUNC GMT_ATTR_INFO* GMT_get_attr_info_glb(UTL_GEOMETRY* pGeo);
+D_EXTERN_FUNC GMT_ATTR_INFO* GMT_get_attr_info_pnt(UTL_GEOMETRY* pGeo);
+D_EXTERN_FUNC GMT_ATTR_INFO* GMT_get_attr_info_pol(UTL_GEOMETRY* pGeo);
+D_EXTERN_FUNC void* GMT_get_attr_val_glb(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo);
+D_EXTERN_FUNC void* GMT_get_attr_val_pnt(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pnt_id);
+D_EXTERN_FUNC void* GMT_get_attr_val_pol(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pol_id);
 
 D_EXTERN_FUNC float UTL_frand01(void);
 D_EXTERN_FUNC float UTL_frand_11(void);
