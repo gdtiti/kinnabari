@@ -2035,3 +2035,35 @@ int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox) {
 	return 0;
 }
 
+int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox) {
+	QVEC cvec;
+	QVEC rvec;
+	QVEC vec;
+	int i;
+
+	cvec = V4_scale(V4_add(pBox->min.qv, pBox->max.qv), 0.5f);
+	rvec = V4_set_w0(V4_sub(pBox->max.qv, cvec));
+	vec = V4_sub(cvec, pVol->pnt[0].qv);
+	for (i = 0; i < 6; ++i) {
+		QVEC nrm = pVol->nrm[i].qv;
+		if (i == 3) vec = V4_sub(cvec, pVol->pnt[6].qv);
+		if (V4_dot4(rvec, V4_abs(nrm)) < V4_dot4(vec, nrm)) return 1;
+	}
+	return 0;
+}
+
+int GEOM_frustum_sphere_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph) {
+	int i;
+	QVEC vec;
+	float r, d;
+
+	r = pSph->r;
+	vec = V4_set_w0(V4_sub(pSph->qv, pVol->pnt[0].qv));
+	for (i = 0; i < 6; ++i) {
+		if (i == 3) vec = V4_sub(pSph->qv, pVol->pnt[6].qv);
+		d = V4_dot4(vec, pVol->nrm[i].qv);
+		if (r < d) return 1;
+	}
+	return 0;
+}
+
