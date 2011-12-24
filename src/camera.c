@@ -105,24 +105,8 @@ D_FORCE_INLINE static int Cam_cull_box_ck(QVEC vec, QVEC rvec, QVEC nrm) {
 }
 
 int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox) {
-	QVEC cvec;
-	QVEC rvec;
-	QVEC vec;
-	GEOM_FRUSTUM* pVol = &pCam->frustum;
-
-	cvec = V4_scale(V4_add(pBox->min.qv, pBox->max.qv), 0.5f);
-	rvec = V4_sub(pBox->max.qv, cvec);
-	vec = V4_sub(cvec, pVol->pnt[0].qv);
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[0].qv)) return 1;
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[1].qv)) return 1;
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[2].qv)) return 1;
-	vec = V4_sub(cvec, pVol->pnt[6].qv);
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[3].qv)) return 1;
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[4].qv)) return 1;
-	if (Cam_cull_box_ck(vec, rvec, pVol->nrm[5].qv)) return 1;
-	return 0;
+	return GEOM_frustum_aabb_cull(&pCam->frustum, pBox);
 }
-
 
 int CAM_cull_box_ex(CAMERA* pCam, GEOM_AABB* pBox) {
 	return !GEOM_frustum_aabb_check(&pCam->frustum, pBox);

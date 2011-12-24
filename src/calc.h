@@ -308,6 +308,8 @@ int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox);
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
 void GEOM_frustum_init(GEOM_FRUSTUM* pVol, MTX m, float fovy, float aspect, float znear, float zfar);
 int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
+int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
+int GEOM_frustum_sphere_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph);
 
 #ifdef __cplusplus
 }
