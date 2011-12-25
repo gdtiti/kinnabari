@@ -66,6 +66,9 @@
 #define D_DEG2RAD(_deg) ( (_deg) * (D_PI / 180.0f) )
 #define D_RAD2DEG(_rad) ( (_rad) * (180.0f / D_PI) )
 
+#define D_RAD2INT(_rad, _nbits) ( (int)((_rad) * ((1<<(_nbits)) / (D_PI*2.0f))) & ((1<<(_nbits))-1) )
+#define D_INT2RAD(_val, _nbits) ( ((_val) & ((1<<(_nbits))-1)) * ((D_PI*2.0f) / ((float)(1<<(_nbits)))) )
+
 #define D_SH_IDX(l, m) ((l)*((l)+1) + (m))
 
 #define D_VEC128(_v) _mm_load_ps(_v)
@@ -163,6 +166,10 @@ extern "C" {
 
 float F_min(float x, float y);
 float F_max(float x, float y);
+sys_ui32 F_get_bits(float x);
+float F_set_bits(sys_ui32 bits);
+sys_ui16 F_encode_half(float x);
+float F_decode_half(sys_ui16 h);
 
 void VEC_cpy(VEC vdst, VEC vsrc);
 void VEC_add(VEC v0, VEC v1, VEC v2);

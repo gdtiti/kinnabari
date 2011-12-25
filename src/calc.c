@@ -71,6 +71,53 @@ float F_max(float x, float y) {
 #endif
 }
 
+sys_ui32 F_get_bits(float x) {
+	sys_byte* pBits = (sys_byte*)&x;
+	sys_ui32 bits = ((sys_ui32)pBits[0] <<  0) |
+	                ((sys_ui32)pBits[1] <<  8) |
+	                ((sys_ui32)pBits[2] << 16) |
+	                ((sys_ui32)pBits[3] << 24);
+	return bits;
+}
+
+float F_set_bits(sys_ui32 bits) {
+	float x;
+	sys_byte* pVal = (sys_byte*)&x;
+	pVal[0] = (bits >>  0) & 0xFF;
+	pVal[1] = (bits >>  8) & 0xFF;
+	pVal[2] = (bits >> 16) & 0xFF;
+	pVal[3] = (bits >> 24) & 0xFF;
+	return x;
+}
+
+sys_ui16 F_encode_half(float x) {
+	sys_i32 e;
+	sys_ui32 s, m;
+	sys_ui32 bits;
+
+	bits = F_get_bits(x);
+	if (!bits) return 0;
+	e = ((bits & 0x7F800000) >> 23) - 127 + 15;
+	if (e < 0) return 0;
+	if (e > 31) e = 31;
+	s = bits & (1<<31);
+	m = bits & 0x7FFFFF;
+	return ((s >> 16) & 0x8000) | ((e << 10) & 0x7C00) | ((m >> 13) & 0x3FF);
+}
+
+float F_decode_half(sys_ui16 h) {
+	sys_i32 e;
+	sys_ui32 s, m;
+	sys_ui32 bits;
+
+	if (!h) return 0.0f;
+	e = ((h & 0x7C00) >> 10) + 127 - 15;
+	s = h & (1 << 15);
+	m = h & 0x3FF;
+	bits = (s << 16) | ((e << 23) & 0x7F800000) | (m << 13);
+	return F_set_bits(bits);
+}
+
 
 void VEC_cpy(VEC vdst, VEC vsrc) {
 	int i;
