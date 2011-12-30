@@ -1674,6 +1674,13 @@ QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2) {
 	return V4_normalize(V4_cross(V4_sub(v1, v0), V4_sub(v2, v0)));
 }
 
+QVEC GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1) {
+	QVEC dir = V4_set_w0(V4_sub(p1, p0));
+	QVEC vec = V4_sub(pos, p0);
+	float t = V4_dot(vec, dir) / V4_dot(dir, dir);
+	return V4_add(p0, V4_scale(dir, t));
+}
+
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);

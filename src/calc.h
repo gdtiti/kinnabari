@@ -147,6 +147,11 @@ typedef union _GEOM_SPHERE {
 	struct {float x, y, z, r;};
 } GEOM_SPHERE;
 
+typedef struct _GEOM_CAPSULE {
+	GEOM_SPHERE p0r;
+	UVEC        p1;
+} GEOM_CAPSULE;
+
 typedef union _GEOM_PLANE {
 	QVEC qv;
 	struct {float a, b, c, d;};
@@ -300,6 +305,7 @@ QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);
 QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
 QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
+QVEC GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
