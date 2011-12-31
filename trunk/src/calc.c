@@ -668,7 +668,7 @@ void MTX_transpose_sr(MTX m0, MTX m1) {
 	m0[0][3] = 0.0f;
 	m0[1][3] = 0.0f;
 	m0[2][3] = 0.0f;
-	V4_store(m0[3], V4_load(m1[3]));
+	if (m0 != m1) V4_store(m0[3], V4_load(m1[3]));
 #else
 	__m128 r0 = D_VEC128(m1[0]);
 	__m128 r1 = D_VEC128(m1[1]);
@@ -1748,6 +1748,116 @@ int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox) {
 #endif
 }
 
+void GEOM_obb_from_mtx(GEOM_OBB* pBox, MTX m) {
+	QMTX tm;
+	QVEC vx;
+	QVEC vy;
+	QVEC vz;
+	MTX_transpose_sr(tm, m);
+	vx = V4_load(tm[0]);
+	vy = V4_load(tm[1]);
+	vz = V4_load(tm[2]);
+	pBox->rad.qv = V4_set_w0(V4_scale(V4_sqrt(V4_add(V4_mul(vx, vx), V4_add(V4_mul(vy, vy), V4_mul(vz, vz)))), 0.5f));
+	V4_store(pBox->mtx[0], V4_normalize(V4_load(m[0])));
+	V4_store(pBox->mtx[1], V4_normalize(V4_load(m[1])));
+	V4_store(pBox->mtx[2], V4_normalize(V4_load(m[2])));
+	pBox->pos.qv = V4_load(m[3]);
+}
+
+int GEOM_obb_overlap(GEOM_OBB* pBox0, GEOM_OBB* pBox1) {
+	QVEC v;
+	QVEC vx0;
+	QVEC vy0;
+	QVEC vz0;
+	QVEC vx1;
+	QVEC vy1;
+	QVEC vz1;
+	QVEC dv[3];
+	QVEC tv;
+	QVEC cv;
+	QVEC rv;
+	float x, y, z;
+	float r0, r1;
+
+	v = V4_sub(pBox1->pos.qv, pBox0->pos.qv);
+	r0 = F_min(pBox0->rad.x, F_min(pBox0->rad.y, pBox0->rad.z));
+	r1 = F_min(pBox1->rad.x, F_min(pBox1->rad.y, pBox1->rad.z));
+	if (V4_mag2(v) <= D_SQ(r0+r1)) {
+		return 1;
+	}
+	vx0 = V4_load(pBox0->mtx[0]);
+	vy0 = V4_load(pBox0->mtx[1]);
+	vz0 = V4_load(pBox0->mtx[2]);
+	vx1 = V4_load(pBox1->mtx[0]);
+	vy1 = V4_load(pBox1->mtx[1]);
+	vz1 = V4_load(pBox1->mtx[2]);
+	dv[0] = V4_abs(V4_set(V4_dot4(vx0, vx1), V4_dot4(vx0, vy1), V4_dot4(vx0, vz1), 0.0f));
+	dv[1] = V4_abs(V4_set(V4_dot4(vy0, vx1), V4_dot4(vy0, vy1), V4_dot4(vy0, vz1), 0.0f));
+	dv[2] = V4_abs(V4_set(V4_dot4(vz0, vx1), V4_dot4(vz0, vy1), V4_dot4(vz0, vz1), 0.0f));
+
+	tv = V4_abs(V4_set(V4_dot4(v, vx0), V4_dot4(v, vy0), V4_dot4(v, vz0), 0.0f));
+	rv = pBox1->rad.qv;
+	cv = V4_add(pBox0->rad.qv, V4_set(V4_dot4(rv, dv[0]), V4_dot4(rv, dv[1]), V4_dot4(rv, dv[2]), 0.0f));
+	if (V4_gt(tv, cv) & 7) {
+		return 0;
+	}
+
+	MTX_transpose_sr(*(QMTX*)dv, *(QMTX*)dv);
+	tv = V4_abs(V4_set(V4_dot4(v, vx1), V4_dot4(v, vy1), V4_dot4(v, vz1), 0.0f));
+	rv = pBox0->rad.qv;
+	cv = V4_add(pBox1->rad.qv, V4_set(V4_dot4(rv, dv[0]), V4_dot4(rv, dv[1]), V4_dot4(rv, dv[2]), 0.0f));
+	if (V4_gt(tv, cv) & 7) {
+		return 0;
+	}
+
+	dv[0] = V4_cross(vx0, vx1);
+	dv[1] = V4_cross(vx0, vy1);
+	dv[2] = V4_cross(vx0, vz1);
+	tv = V4_abs(V4_set(V4_dot4(v, dv[0]), V4_dot4(v, dv[1]), V4_dot4(v, dv[2]), 0.0f));
+	x = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx0), V4_dot4(dv[0], vy0), V4_dot4(dv[0], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx1), V4_dot4(dv[0], vy1), V4_dot4(dv[0], vz1), 0.0f)));
+	y = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx0), V4_dot4(dv[1], vy0), V4_dot4(dv[1], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx1), V4_dot4(dv[1], vy1), V4_dot4(dv[1], vz1), 0.0f)));
+	z = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx0), V4_dot4(dv[2], vy0), V4_dot4(dv[2], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx1), V4_dot4(dv[2], vy1), V4_dot4(dv[2], vz1), 0.0f)));
+	cv = V4_set(x, y, z, 0.0f);
+	if (V4_gt(tv, cv) & 7) {
+		return 0;
+	}
+
+	dv[0] = V4_cross(vy0, vx1);
+	dv[1] = V4_cross(vy0, vy1);
+	dv[2] = V4_cross(vy0, vz1);
+	tv = V4_abs(V4_set(V4_dot4(v, dv[0]), V4_dot4(v, dv[1]), V4_dot4(v, dv[2]), 0.0f));
+	x = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx0), V4_dot4(dv[0], vy0), V4_dot4(dv[0], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx1), V4_dot4(dv[0], vy1), V4_dot4(dv[0], vz1), 0.0f)));
+	y = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx0), V4_dot4(dv[1], vy0), V4_dot4(dv[1], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx1), V4_dot4(dv[1], vy1), V4_dot4(dv[1], vz1), 0.0f)));
+	z = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx0), V4_dot4(dv[2], vy0), V4_dot4(dv[2], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx1), V4_dot4(dv[2], vy1), V4_dot4(dv[2], vz1), 0.0f)));
+	cv = V4_set(x, y, z, 0.0f);
+	if (V4_gt(tv, cv) & 7) {
+		return 0;
+	}
+
+	dv[0] = V4_cross(vz0, vx1);
+	dv[1] = V4_cross(vz0, vy1);
+	dv[2] = V4_cross(vz0, vz1);
+	tv = V4_abs(V4_set(V4_dot4(v, dv[0]), V4_dot4(v, dv[1]), V4_dot4(v, dv[2]), 0.0f));
+	x = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx0), V4_dot4(dv[0], vy0), V4_dot4(dv[0], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[0], vx1), V4_dot4(dv[0], vy1), V4_dot4(dv[0], vz1), 0.0f)));
+	y = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx0), V4_dot4(dv[1], vy0), V4_dot4(dv[1], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[1], vx1), V4_dot4(dv[1], vy1), V4_dot4(dv[1], vz1), 0.0f)));
+	z = V4_dot4(pBox0->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx0), V4_dot4(dv[2], vy0), V4_dot4(dv[2], vz0), 0.0f))) +
+	    V4_dot4(pBox1->rad.qv, V4_abs(V4_set(V4_dot4(dv[2], vx1), V4_dot4(dv[2], vy1), V4_dot4(dv[2], vz1), 0.0f)));
+	cv = V4_set(x, y, z, 0.0f);
+	if (V4_gt(tv, cv) & 7) {
+		return 0;
+	}
+
+	return 1;
+}
+
 void GEOM_dop8_init(GEOM_DOP8* pDOP) {
 	pDOP->min.qv = V4_fill(D_MAX_FLOAT);
 	pDOP->max.qv = V4_fill(-D_MAX_FLOAT);
@@ -1972,6 +2082,20 @@ int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
 	t = V4_add(V4_mul(D_V4_SHUFFLE(e, 1, 0, 0, 3), D_V4_SHUFFLE(a, 2, 2, 1, 3)), V4_mul(D_V4_SHUFFLE(e, 2, 2, 1, 3), D_V4_SHUFFLE(a, 1, 0, 0, 3)));
 	if (V4_gt(V4_abs(V4_cross(m, v)), t) & 7) return 0;
 	return 1;
+}
+
+int GEOM_seg_obb_check(QVEC p0, QVEC p1, GEOM_OBB* pBox) {
+	GEOM_AABB aabb;
+	QMTX im;
+	QVEC tp0;
+	QVEC tp1;
+	QVEC rv = pBox->rad.qv;
+	aabb.min.qv = V4_set_w1(V4_scale(rv, -1.0f));
+	aabb.max.qv = rv;
+	MTX_invert_fast(im, pBox->mtx);
+	tp0 = MTX_apply(im, p0);
+	tp1 = MTX_apply(im, p1);
+	return GEOM_seg_aabb_check(tp0, tp1, &aabb);
 }
 
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord) {
