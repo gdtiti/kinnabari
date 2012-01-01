@@ -63,6 +63,8 @@
 #define D_MAX3(_x, _y, _z) D_MAX((_x), D_MAX((_y), (_z)))
 #define D_MAX4(_x, _y, _z, _w) D_MAX((_x), D_MAX3((_y), (_z), (_w)))
 
+#define D_CLAMP_F(_x, _min, _max) F_max(F_min(_x, _max), _min)
+
 #define D_DEG2RAD(_deg) ( (_deg) * (D_PI / 180.0f) )
 #define D_RAD2DEG(_rad) ( (_rad) * (180.0f / D_PI) )
 
@@ -310,7 +312,8 @@ QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);
 QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
 QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
-QVEC GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1);
+float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir);
+QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
