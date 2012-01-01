@@ -1674,10 +1674,23 @@ QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2) {
 	return V4_normalize(V4_cross(V4_sub(v1, v0), V4_sub(v2, v0)));
 }
 
-QVEC GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1) {
+float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir) {
 	QVEC dir = V4_set_w0(V4_sub(p1, p0));
 	QVEC vec = V4_sub(pos, p0);
 	float t = V4_dot(vec, dir) / V4_dot(dir, dir);
+	if (pPnt) {
+		*pPnt = V4_add(p0, V4_scale(dir, t));
+	}
+	if (pDir) {
+		*pDir = dir;
+	}
+	return t;
+}
+
+QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1) {
+	QVEC dir;
+	float t = GEOM_line_closest(pos, p0, p1, NULL, &dir);
+	t = D_CLAMP_F(t, 0.0f, 1.0f);
 	return V4_add(p0, V4_scale(dir, t));
 }
 
