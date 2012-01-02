@@ -216,6 +216,7 @@ QVEC V4_div(QVEC a, QVEC b);
 QVEC V4_combine(QVEC a, float sa, QVEC b, float sb);
 QVEC V4_lerp(QVEC a, QVEC b, float bias);
 QVEC V4_cross(QVEC a, QVEC b);
+QVEC V4_vdot(QVEC a, QVEC b);
 float V4_dot(QVEC a, QVEC b);
 float V4_dot4(QVEC a, QVEC b);
 float V4_triple(QVEC v0, QVEC v1, QVEC v2);
@@ -314,6 +315,8 @@ QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
 QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
 float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir);
 QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1);
+int GEOM_sph_overlap(QVEC sph0, QVEC sph1);
+int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
@@ -333,7 +336,7 @@ int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
 void GEOM_frustum_init(GEOM_FRUSTUM* pVol, MTX m, float fovy, float aspect, float znear, float zfar);
 int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
 int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
-int GEOM_frustum_sphere_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph);
+int GEOM_frustum_sph_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph);
 
 #ifdef __cplusplus
 }

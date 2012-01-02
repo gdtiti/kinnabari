@@ -406,6 +406,11 @@ QVEC V4_cross(QVEC a, QVEC b) {
 #endif
 }
 
+QVEC V4_vdot(QVEC a, QVEC b) {
+	QVEC ab = V4_mul(a, b);
+	return V4_add(V4_add(D_V4_FILL_ELEM(ab, 0), D_V4_FILL_ELEM(ab, 1)), D_V4_FILL_ELEM(ab, 2));
+}
+
 D_FORCE_INLINE float V4_dot(QVEC a, QVEC b) {
 	UVEC v1;
 	UVEC v2;
@@ -1694,6 +1699,22 @@ QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1) {
 	return V4_add(p0, V4_scale(dir, t));
 }
 
+int GEOM_sph_overlap(QVEC sph0, QVEC sph1) {
+	QVEC vdist2;
+	QVEC vrsum2;
+	vdist2 = V4_sub(sph1, sph0);
+	vdist2 = V4_vdot(vdist2, vdist2);
+	vrsum2 = V4_add(sph0, sph1);
+	vrsum2 = V4_mul(vrsum2, vrsum2);
+	return !!(V4_le(vdist2, vrsum2) & 8);
+}
+
+int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1) {
+	QVEC pos;
+	pos = GEOM_seg_closest(sph, p0r, p1);
+	return GEOM_sph_overlap(sph, pos);
+}
+
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
@@ -2243,7 +2264,7 @@ int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox) {
 	return 0;
 }
 
-int GEOM_frustum_sphere_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph) {
+int GEOM_frustum_sph_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph) {
 	int i;
 	QVEC vec;
 	float r, d;
