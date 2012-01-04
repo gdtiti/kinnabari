@@ -1710,9 +1710,30 @@ int GEOM_sph_overlap(QVEC sph0, QVEC sph1) {
 }
 
 int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1) {
-	QVEC pos;
-	pos = GEOM_seg_closest(sph, p0r, p1);
+	QVEC pos = GEOM_seg_closest(sph, p0r, p1);
 	return GEOM_sph_overlap(sph, pos);
+}
+
+static D_FORCE_INLINE int Geom_sph_aabb_check_r2(QVEC c, QVEC r2, QVEC* pMin, QVEC* pMax) {
+	QVEC vdist2;
+	QVEC pos = V4_clamp(c, *pMin, *pMax);
+	vdist2 = V4_sub(c, pos);
+	vdist2 = V4_vdot(vdist2, vdist2);
+	return !!(V4_le(vdist2, r2) & 8);
+}
+
+int GEOM_sph_aabb_check(QVEC sph, QVEC min, QVEC max) {
+	return Geom_sph_aabb_check_r2(sph, V4_mul(sph, sph), &min, &max);
+}
+
+int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox) {
+	QMTX im;
+	QVEC min;
+	QVEC max;
+	MTX_invert_fast(im, pBox->mtx);
+	max = pBox->rad.qv;
+	min = V4_set_w1(V4_scale(max, -1.0f));
+	return Geom_sph_aabb_check_r2(MTX_calc_qpnt(im, sph), V4_mul(sph, sph), &min, &max);
 }
 
 void GEOM_aabb_init(GEOM_AABB* pBox) {
