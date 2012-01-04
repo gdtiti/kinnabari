@@ -317,6 +317,8 @@ float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir);
 QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1);
 int GEOM_sph_overlap(QVEC sph0, QVEC sph1);
 int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1);
+int GEOM_sph_aabb_check(QVEC sph, QVEC min, QVEC max);
+int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
