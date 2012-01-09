@@ -1699,6 +1699,56 @@ QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1) {
 	return V4_add(p0, V4_scale(dir, t));
 }
 
+float GEOM_seg_dist2(GEOM_LINE* pSeg0, GEOM_LINE* pSeg1, GEOM_LINE* pBridge) {
+	QVEC dir0;
+	QVEC dir1;
+	QVEC vec;
+	GEOM_LINE seg;
+	float d0, d1, dd, dn;
+	float t0, t1, len0, len1;
+	static float eps = 1e-6f;
+
+	t0 = 0.0f;
+	t1 = 0.0f;
+	dir0 = V4_set_w0(V4_sub(pSeg0->pos1.qv, pSeg0->pos0.qv));
+	dir1 = V4_set_w0(V4_sub(pSeg1->pos1.qv, pSeg1->pos0.qv));
+	vec = V4_sub(pSeg0->pos0.qv, pSeg1->pos0.qv);
+	len0 = V4_dot4(dir0, dir0);
+	len1 = V4_dot4(dir1, dir1);
+	d1 = V4_dot4(vec, dir1);
+	if (len0 <= eps) {
+		if (len1 > eps) {
+			t1 = D_CLAMP_F(d1 / len1, 0.0f, 1.0f);
+		}
+	} else {
+		d0 = V4_dot4(vec, dir0);
+		if (len1 <= eps) {
+			t0 = D_CLAMP_F(-d0 / len0, 0.0f, 1.0f);
+		} else {
+			dd = V4_dot4(dir0, dir1);
+			dn = len0*len1 - D_SQ(dd);
+			if (dn != 0.0f) {
+				t0 = D_CLAMP_F((dd*d1 - d0*len1) / dn, 0.0f, 1.0f);
+			}
+			t1 = (dd*t0 + d1) / len1;
+			if (t1 < 0.0f) {
+				t0 = D_CLAMP_F(-d0 / len0, 0.0f, 1.0f);
+				t1 = 0.0f;
+			} else if (t1 > 1.0f) {
+				t0 = D_CLAMP_F((dd - d0) / len0, 0.0f, 1.0f);
+				t1 = 1.0f;
+			}
+		}
+	}
+	seg.pos0.qv = V4_add(pSeg0->pos0.qv, V4_scale(dir0, t0));
+	seg.pos1.qv = V4_add(pSeg1->pos0.qv, V4_scale(dir1, t1));
+	if (pBridge) {
+		pBridge->pos0.qv = seg.pos0.qv;
+		pBridge->pos1.qv = seg.pos1.qv;
+	}
+	return V4_dist2(seg.pos0.qv, seg.pos1.qv);
+}
+
 int GEOM_sph_overlap(QVEC sph0, QVEC sph1) {
 	QVEC vdist2;
 	QVEC vrsum2;
@@ -1709,8 +1759,8 @@ int GEOM_sph_overlap(QVEC sph0, QVEC sph1) {
 	return !!(V4_le(vdist2, vrsum2) & 8);
 }
 
-int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1) {
-	QVEC pos = GEOM_seg_closest(sph, p0r, p1);
+int GEOM_sph_cap_check(QVEC sph, QVEC pos0r, QVEC pos1) {
+	QVEC pos = GEOM_seg_closest(sph, pos0r, pos1);
 	return GEOM_sph_overlap(sph, pos);
 }
 
@@ -1734,6 +1784,20 @@ int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox) {
 	max = pBox->rad.qv;
 	min = V4_set_w1(V4_scale(max, -1.0f));
 	return Geom_sph_aabb_check_r2(MTX_calc_qpnt(im, sph), V4_mul(sph, sph), &min, &max);
+}
+
+int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1) {
+	GEOM_LINE seg0;
+	GEOM_LINE seg1;
+	float dist2, rsum;
+
+	seg0.pos0.qv = V4_set_w1(pCap0->pos0r.qv);
+	seg0.pos1.qv = V4_set_w1(pCap0->pos1.qv);
+	seg1.pos0.qv = V4_set_w1(pCap1->pos0r.qv);
+	seg1.pos1.qv = V4_set_w1(pCap1->pos1.qv);
+	dist2 = GEOM_seg_dist2(&seg0, &seg1, NULL);
+	rsum = pCap0->pos0r.r + pCap1->pos0r.r;
+	return (dist2 <= D_SQ(rsum));
 }
 
 void GEOM_aabb_init(GEOM_AABB* pBox) {
