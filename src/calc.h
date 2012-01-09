@@ -134,6 +134,11 @@ typedef struct _SH_PARAM {
 	UVEC sh[7];
 } SH_PARAM;
 
+typedef struct _GEOM_LINE {
+	UVEC pos0;
+	UVEC pos1;
+} GEOM_LINE;
+
 typedef struct _GEOM_AABB {
 	UVEC min;
 	UVEC max;
@@ -155,8 +160,8 @@ typedef union _GEOM_SPHERE {
 } GEOM_SPHERE;
 
 typedef struct _GEOM_CAPSULE {
-	GEOM_SPHERE p0r;
-	UVEC        p1;
+	GEOM_SPHERE pos0r;
+	UVEC        pos1;
 } GEOM_CAPSULE;
 
 typedef union _GEOM_PLANE {
@@ -315,10 +320,12 @@ QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
 QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
 float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir);
 QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1);
+float GEOM_seg_dist2(GEOM_LINE* pSeg0, GEOM_LINE* pSeg1, GEOM_LINE* pBridge);
 int GEOM_sph_overlap(QVEC sph0, QVEC sph1);
-int GEOM_sph_cap_check(QVEC sph, QVEC p0r, QVEC p1);
+int GEOM_sph_cap_check(QVEC sph, QVEC pos0r, QVEC pos1);
 int GEOM_sph_aabb_check(QVEC sph, QVEC min, QVEC max);
 int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox);
+int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
