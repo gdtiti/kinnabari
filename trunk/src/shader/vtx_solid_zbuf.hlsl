@@ -7,6 +7,6 @@
 
 void main(VTX vtx, out float4 cpos : POSITION, out float4 zcpos : TEXCOORD) {
 	PIX pix;
-	cpos = Xform(vtx, Get_wmtx(vtx), pix);
+	cpos = Xform(vtx, Get_wmtx(vtx), pix, false);
 	zcpos = cpos;
 }

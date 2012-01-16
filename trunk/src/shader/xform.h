@@ -7,6 +7,8 @@ typedef row_major float3x4 wmtx_t;
 
 extern float4x4 g_view_proj : register(c0);
 extern float4 g_vtx_param; // depth_bias, n_scale, n_bias
+extern float3 g_pos_scale;
+extern float3 g_pos_base;
 extern wmtx_t g_world;
 extern wmtx_t g_skin[32];
 
@@ -54,9 +56,16 @@ float3 Decode_nvec(float3 vec) {
 	return vec*scale + bias;
 }
 
-float4 Xform(VTX vtx, wmtx_t wm, out PIX pix) {
+float3 Decode_pos(float3 pos, bool rel_flg) {
+	if (rel_flg) {
+		pos = (pos * g_pos_scale) + g_pos_base;
+	}
+	return pos;
+}
+
+float4 Xform(VTX vtx, wmtx_t wm, out PIX pix, bool rel_flg) {
 	pix = (PIX)0;
-	float3 wpos = mul(wm, float4(vtx.pos.xyz, 1));
+	float3 wpos = mul(wm, float4(Decode_pos(vtx.pos.xyz, rel_flg), 1));
 	float3 wnrm = normalize(mul(wm, float4(Decode_nvec(vtx.nrm.xyz), 0)).xyz);
 	pix.wpos = wpos;
 	pix.wnrm = wnrm;

@@ -6,6 +6,6 @@
 #include "xform.h"
 
 void main(VTX vtx, out float4 cpos : POSITION, out PIX pix : TEXCOORD, out float4 clr : COLOR) {
-	cpos = Xform(vtx, Get_wmtx_skin(vtx), pix);
+	cpos = Xform(vtx, Get_wmtx_skin(vtx), pix, false);
 	clr = float4(1, 1, 1, 1);
 }
