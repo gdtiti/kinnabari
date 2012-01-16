@@ -8,7 +8,7 @@
 
 void main(VTX vtx, out float4 cpos : POSITION, out PIX pix : TEXCOORD, out float4 clr : TEXCOORD5) {
 	wmtx_t wm = Get_wmtx_skin(vtx);
-	cpos = Xform(vtx, wm, pix);
+	cpos = Xform(vtx, wm, pix, true);
 	Xform_tangent(vtx, wm, g_bump_param.x, pix);
 	clr = float4(0.0f, 0.0f, 0.0f, 1.0f);
 }
