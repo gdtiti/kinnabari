@@ -477,6 +477,48 @@ GMT_ATTR_INFO* GMT_get_attr_info_pol(UTL_GEOMETRY* pGeo) {
 	return (GMT_ATTR_INFO*)D_INCR_PTR(pGeo->pData, pGeo->pData->offs_pol_attr);
 }
 
+static GMT_ATTR_INFO* Find_gmt_attr(UTL_GEOMETRY* pGeo, const char* name, int kind) {
+	int i, n;
+	GMT_ATTR_INFO* pAttr = NULL;
+	switch (kind) {
+		case 0:
+			pAttr = GMT_get_attr_info_glb(pGeo);
+			n = pGeo->pData->nb_glb_attr;
+			break;
+		case 1:
+			pAttr = GMT_get_attr_info_pnt(pGeo);
+			n = pGeo->pData->nb_pnt_attr;
+			break;
+		case 2:
+			pAttr = GMT_get_attr_info_pol(pGeo);
+			n = pGeo->pData->nb_pol_attr;
+			break;
+		default:
+			break;
+	}
+	if (pAttr) {
+		for (i = 0; i < n; ++i) {
+			if (0 == strcmp(GMT_get_str(pGeo, pAttr->name), name)) {
+				break;
+			}
+			++pAttr;
+		}
+	}
+	return pAttr;
+}
+
+GMT_ATTR_INFO* GMT_find_attr_glb(UTL_GEOMETRY* pGeo, const char* name) {
+	return Find_gmt_attr(pGeo, name, 0);
+}
+
+GMT_ATTR_INFO* GMT_find_attr_pnt(UTL_GEOMETRY* pGeo, const char* name) {
+	return Find_gmt_attr(pGeo, name, 1);
+}
+
+GMT_ATTR_INFO* GMT_find_attr_pol(UTL_GEOMETRY* pGeo, const char* name) {
+	return Find_gmt_attr(pGeo, name, 2);
+}
+
 void* GMT_get_attr_val_glb(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo) {
 	void* pVal = NULL;
 	GMT_ATTR_INFO* pTop = GMT_get_attr_info_glb(pGeo);
