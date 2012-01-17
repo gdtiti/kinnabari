@@ -1741,6 +1741,15 @@ static void Dev_init() {
 	pDev->SetPixelShader(NULL);
 }
 
+static void GParam_init() {
+	RDR_GPARAM* pGP = &g_rdr_param;
+	memset(&g_rdr_param, 0, sizeof(RDR_GPARAM));
+	pGP->inv_gamma.qv = V4_fill(1.0f);
+#ifdef D_RDR_GP_pos_scale
+	pGP->pos_scale.qv = V4_fill(1.0f);
+#endif
+}
+
 void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 	HRESULT hres;
 	UINT adapter;
@@ -1752,7 +1761,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 
 	CoInitialize(NULL);
 	memset(pRdr, 0, sizeof(RDR_WORK));
-	memset(&g_rdr_param, 0, sizeof(RDR_GPARAM));
+	GParam_init();
 
 	pRdr->mpD3D = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pRdr->mpD3D) {
