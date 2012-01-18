@@ -1800,6 +1800,31 @@ int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1) {
 	return (dist2 <= D_SQ(rsum));
 }
 
+int GEOM_cap_obb_check(GEOM_CAPSULE* pCap, GEOM_OBB* pBox) {
+	QVEC d0;
+	QVEC d1;
+	QVEC p;
+	QVEC a;
+	QVEC vx = V4_load(pBox->mtx[0]);
+	QVEC vy = V4_load(pBox->mtx[1]);
+	QVEC vz = V4_load(pBox->mtx[2]);
+	QVEC v = V4_set_w0(V4_sub(V4_scale(V4_add(pCap->pos0r.qv, pCap->pos1.qv), 0.5f), pBox->pos.qv));
+	QVEC h = V4_set_w0(V4_scale(V4_sub(pCap->pos1.qv, pCap->pos0r.qv), 0.5f));
+	float cr = pCap->pos0r.r;
+	d0 = V4_abs(V4_set_vec(V4_dot4(v, vx), V4_dot4(v, vy), V4_dot4(v, vz)));
+	d1 = V4_abs(V4_set_vec(V4_dot4(h, vx), V4_dot4(h, vy), V4_dot4(h, vz)));
+	d1 = V4_add(d1, pBox->rad.qv);
+	d1 = V4_add(d1, V4_fill(cr));
+	if (V4_gt(d0, d1) & 7) return 0;
+	GEOM_line_closest(pBox->pos.qv, pCap->pos0r.qv, pCap->pos1.qv, &p, NULL);
+	a = V4_normalize(V4_sub(p, pBox->pos.qv));
+	vx = V4_scale(vx, pBox->rad.x);
+	vy = V4_scale(vy, pBox->rad.y);
+	vz = V4_scale(vz, pBox->rad.z);
+	if (fabsf(V4_dot(v, a)) > fabsf(V4_dot(vx, a)) + fabsf(V4_dot(vy, a)) + fabsf(V4_dot(vz, a)) + cr) return 0;
+	return 1;
+}
+
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);

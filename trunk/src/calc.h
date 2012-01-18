@@ -326,6 +326,7 @@ int GEOM_sph_cap_check(QVEC sph, QVEC pos0r, QVEC pos1);
 int GEOM_sph_aabb_check(QVEC sph, QVEC min, QVEC max);
 int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox);
 int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1);
+int GEOM_cap_obb_check(GEOM_CAPSULE* pCap, GEOM_OBB* pBox);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
