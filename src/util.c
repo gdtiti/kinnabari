@@ -406,7 +406,7 @@ void CFG_init(const char* fname) {
 	while (1) {
 		if (NULL == fgets(buff, sizeof(buff), f)) break;
 		if (buff[0] == '#') continue;
-		sscanf_s(buff, "%[_.a-z0-9]=%[-_./a-z0-9]", name, sizeof(name), val, sizeof(val));
+		sscanf_s(buff, "%[_.a-z0-9] = %[-_./a-z0-9]", name, sizeof(name), val, sizeof(val));
 		pName = DICT_pool_add(s_cfg_wk.pSym, (const char*)name);
 		pVal = DICT_pool_add(s_cfg_wk.pSym, (const char*)val);
 		DICT_put_p(s_cfg_wk.pDict, pName, (void*)pVal);
@@ -417,10 +417,28 @@ void CFG_init(const char* fname) {
 
 const char* CFG_get(const char* pName) {
 	const char* pVal = NULL;
-	if (s_cfg_wk.pDict) {
+	if (pName && s_cfg_wk.pDict) {
 		pVal = (const char*)DICT_get_p(s_cfg_wk.pDict, pName);
 	}
 	return pVal;
+}
+
+int CFG_get_i(const char* pName, int def_val) {
+	int val = def_val;
+	const char* pVal = CFG_get(pName);
+	if (pVal) {
+		val = atoi(pVal);
+	}
+	return val;
+}
+
+float CFG_get_f(const char* pName, float def_val) {
+	float val = def_val;
+	const char* pVal = CFG_get(pName);
+	if (pVal) {
+		val = (float)atof(pVal);
+	}
+	return val;
 }
 
 
