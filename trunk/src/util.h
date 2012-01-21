@@ -123,6 +123,8 @@ D_EXTERN_FUNC void DICT_foreach(DICT* pDict, DICT_FUNC func, void* pData);
 
 D_EXTERN_FUNC void CFG_init(const char* fname);
 D_EXTERN_FUNC const char* CFG_get(const char* pName);
+D_EXTERN_FUNC int CFG_get_i(const char* pName, int def_val);
+D_EXTERN_FUNC float CFG_get_f(const char* pName, float def_val);
 
 D_EXTERN_FUNC UTL_GEOMETRY* GMT_load(const char* fname);
 D_EXTERN_FUNC void GMT_free(UTL_GEOMETRY* pGeo);

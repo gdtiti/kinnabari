@@ -121,7 +121,7 @@ static void Init() {
 			ShowWindow(g_wk.hWnd, SW_SHOW);
 			UpdateWindow(g_wk.hWnd);
 
-			RDR_init(g_wk.hWnd, g_wk.w, g_wk.h, FALSE);
+			RDR_init(g_wk.hWnd, g_wk.w, g_wk.h, !!CFG_get_i("fullscreen", 0));
 			JOB_sys_init(Wrk_init_func);
 			MTL_sys_init();
 			MDL_sys_init();
