@@ -2,6 +2,7 @@
 #include "job.h"
 #include "calc.h"
 #include "util.h"
+#include "keyframe.h"
 #include "anim.h"
 #include "render.h"
 #include "texture.h"
