@@ -210,6 +210,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\src\keyframe.c"
+			>
+		</File>
+		<File
+			RelativePath=".\src\keyframe.h"
+			>
+		</File>
+		<File
 			RelativePath=".\src\main.c"
 			>
 		</File>
