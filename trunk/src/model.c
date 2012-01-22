@@ -21,6 +21,7 @@
 #include "system.h"
 #include "calc.h"
 #include "util.h"
+#include "keyframe.h"
 #include "anim.h"
 #include "render.h"
 #include "material.h"
