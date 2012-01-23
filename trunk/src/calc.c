@@ -2230,6 +2230,7 @@ int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox) {
 
 int GEOM_seg_obb_check(QVEC p0, QVEC p1, GEOM_OBB* pBox) {
 	GEOM_AABB aabb;
+	GEOM_AABB seg_aabb;
 	QMTX im;
 	QVEC tp0;
 	QVEC tp1;
@@ -2239,6 +2240,9 @@ int GEOM_seg_obb_check(QVEC p0, QVEC p1, GEOM_OBB* pBox) {
 	MTX_invert_fast(im, pBox->mtx);
 	tp0 = MTX_apply(im, p0);
 	tp1 = MTX_apply(im, p1);
+	seg_aabb.min.qv = V4_min(tp0, tp1);
+	seg_aabb.max.qv = V4_max(tp0, tp1);
+	if (!GEOM_aabb_overlap(&seg_aabb, &aabb)) return 0;
 	return GEOM_seg_aabb_check(tp0, tp1, &aabb);
 }
 
