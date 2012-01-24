@@ -67,7 +67,23 @@ typedef struct _OBST_QUERY {
 	int pol_no;
 } OBST_QUERY;
 
+typedef struct _OBST_RANGE_STATE {
+	void* pData;
+	int   count;
+} OBST_RANGE_STATE;
+
+typedef void (*OBST_RANGE_FUNC)(int pol_no, OBST_RANGE_STATE* pState, QVEC* pVtx);
+
+typedef struct _OBST_RANGE_QUERY {
+	GEOM_AABB        range;
+	OBST_RANGE_STATE state;
+	OBST_RANGE_FUNC  func;
+	sys_ui32         mask;
+} OBST_RANGE_QUERY;
+
 D_EXTERN_FUNC void OBST_load(OBSTACLE* pObst, const char* obs_name, const char* bvh_name);
 D_EXTERN_FUNC void OBST_free(OBSTACLE* pObst);
 D_EXTERN_FUNC int OBST_check(OBSTACLE* pObst, OBST_QUERY* pQry);
 D_EXTERN_FUNC int OBST_collide(OBSTACLE* pObst, QVEC cur_pos, QVEC prev_pos, float r, sys_ui32 mask, QVEC* pNew_pos);
+D_EXTERN_FUNC int OBST_range(OBSTACLE* pObst, OBST_RANGE_QUERY* pQry);
+D_EXTERN_FUNC void OBST_get_pol(OBSTACLE* pObst, int pol_no, QVEC* pVtx, QVEC* pNrm);
