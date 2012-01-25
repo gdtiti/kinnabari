@@ -69,10 +69,15 @@ typedef struct _ANIMATION {
 	ANM_BLEND* pBlend;
 	KIN_CHAIN kc_leg_l;
 	KIN_CHAIN kc_leg_r;
+	float ankle_height;
 	float frame;
 	float frame_step;
 	sys_ui32 status;
 } ANIMATION;
+
+typedef int (*IK_FLOOR_FUNC)(QVEC pos, float range, UVEC* pFloor_pos, UVEC* pFloor_nml);
+
+D_EXTERN_DATA IK_FLOOR_FUNC g_ik_floor_func;
 
 D_EXTERN_FUNC ANIMATION* ANM_create(MODEL* pMdl);
 D_EXTERN_FUNC void ANM_destroy(ANIMATION* pAnm);
