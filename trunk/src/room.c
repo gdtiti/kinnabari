@@ -22,6 +22,7 @@
 #include "calc.h"
 #include "util.h"
 #include "keyframe.h"
+#include "anim.h"
 #include "render.h"
 #include "camera.h"
 #include "material.h"
@@ -29,6 +30,29 @@
 #include "room.h"
 
 ROOM g_room;
+
+static int Ik_floor(QVEC pos, float range, UVEC* pFloor_pos, UVEC* pFloor_nml) {
+	ROOM* pRoom = &g_room;
+	OBSTACLE* pObst = &pRoom->obst;
+	int res = 0;
+	if (pObst) {
+		OBST_QUERY qry;
+		QVEC offs = V4_set_vec(0.0f, range, 0.0f);
+		qry.p0.qv = V4_add(pos, offs);
+		qry.p1.qv = V4_sub(pos, offs);
+		qry.mask = E_OBST_POLYATTR_FLOOR;
+		res = OBST_check(pObst, &qry);
+		if (res) {
+			if (pFloor_pos) {
+				pFloor_pos->qv = qry.hit_pos.qv;
+			}
+			if (pFloor_nml) {
+				pFloor_nml->qv = qry.hit_nml.qv;
+			}
+		}
+	}
+	return res;
+}
 
 static void Vtx_cpy(RDR_VTX_GENERAL* pDst, RMD_VERTEX* pSrc) {
 	pDst->pos[0] = pSrc->pos.x;
@@ -264,6 +288,7 @@ void ROOM_init(int id) {
 	OBST_load(&pRoom->obst, "room/room.obs", "room/room.bvh");
 	pRoom->pRmd[0] = RMD_load("room/room.rmd");
 	CAM_load_data(&g_cam, "room/room.kfr", "room/room.lan");
+	g_ik_floor_func = Ik_floor;
 }
 
 void ROOM_free() {

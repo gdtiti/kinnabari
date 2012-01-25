@@ -28,6 +28,8 @@
 #include "camera.h"
 #include "model.h"
 
+IK_FLOOR_FUNC g_ik_floor_func = NULL;
+
 static void KC_init(ANIMATION* pAnm, KIN_CHAIN* pKC, JOINT* pJnt_top, JOINT* pJnt_rot, JOINT* pJnt_end) {
 	memset(pKC, 0, sizeof(KIN_CHAIN));
 	pKC->pJnt_top = pJnt_top;
@@ -47,6 +49,7 @@ ANIMATION* ANM_create(MODEL* pMdl) {
 		pAnm->pBlend = (ANM_BLEND*)D_INCR_PTR(pAnm, D_ALIGN(sizeof(ANIMATION), 16));
 		pAnm->pBlend->pPose = (JNT_BLEND_POSE*)D_INCR_PTR(pAnm->pBlend, D_ALIGN(sizeof(ANM_BLEND), 16));
 		pAnm->pData = NULL;
+		pAnm->ankle_height = 0.1f;
 		pAnm->frame = 0.0f;
 		pAnm->frame_step = 1.0f;
 		KC_init(pAnm, &pAnm->kc_leg_l, MDL_get_jnt(pMdl, "jnt_uprLeg_L"), MDL_get_jnt(pMdl, "jnt_lwrLeg_L"), MDL_get_jnt(pMdl, "jnt_ankle_L"));
@@ -259,6 +262,19 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 	MTX_mul(top_mtx, top_mtx, parent_mtx);
 
 	end_pos = MTX_calc_qpnt(pMdl->root_mtx, pKC->end_pos.qv);
+	if (g_ik_floor_func) {
+		UVEC floor_pos;
+		UVEC floor_nml;
+		if (g_ik_floor_func(end_pos, 1.0f, &floor_pos, &floor_nml)) {
+			UVEC tpos;
+			float ankle_h = pAnm->ankle_height;
+			tpos.qv = end_pos;
+			if (tpos.y - ankle_h < floor_pos.y) {
+				tpos.y = floor_pos.y + ankle_h;
+				end_pos = tpos.qv;
+			}
+		}
+	}
 	top_pos = V4_load(top_mtx[3]);
 	len0 = pKC->pJnt_rot->pInfo->offs_len.w;
 	len1 = pKC->pJnt_end->pInfo->offs_len.w;
