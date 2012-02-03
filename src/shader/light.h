@@ -13,6 +13,7 @@ extern bool g_omni_sw3;
 extern float4 g_omni_param[2*4];
 
 extern float4 g_SH[7];
+extern float4 g_ambient_color;
 
 
 float Dist_attn(float dist, float start, float falloff) {

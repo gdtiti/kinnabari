@@ -3,6 +3,9 @@
 // Released under the terms of Version 3 of the GNU General Public License.
 // See LICENSE.txt for details.
 
+#define D_ENVMAP_CUBE 0
+#define D_ENVMAP_STRIP 1
+
 extern float3 g_view_pos;
 extern float4 g_base_color;
 extern float4 g_spec_param; // fresnel_scale, fresnel_bias, fresnel_pow, spec_pow
@@ -13,6 +16,7 @@ sampler g_smp_base;
 sampler g_smp_mask;
 sampler g_smp_bump;
 samplerCUBE g_smp_cube;
+sampler g_smp_env;
 
 float Spec_pow(float d, float shin) {
 #if 1
@@ -47,14 +51,55 @@ float3 NMap_normal(float3 nrm, float3 tng, float3 bnm, sampler smp, float2 uv) {
 	return normalize(n.x*tng + n.y*bnm + n.z*nrm);
 }
 
-float4 Cube_env(float3 nrm, float3 ivec, samplerCUBE smp, float lvl) {
+float4 Env_cube(float3 nrm, float3 ivec, samplerCUBE smp, float lvl) {
 	float3 rvec = reflect(ivec, nrm);
 	return texCUBElod(smp, float4(rvec, lvl));
 }
 
-float3 Simple_spec(float3 pos, float3 nrm, float2 uv) {
+float4 Env_strip(float3 nrm, float3 ivec, sampler2D smp, float lvl) {
+	float3 v = reflect(ivec, nrm);
+	float2 uv, org;
+	float3 a = abs(v);
+	if (a.x >= a.y && a.x >= a.z) {
+		uv = float2(v.z / v.x, v.y / a.x);
+		if (v.x > 0.0) {
+			org = float2(0.0, 0.0);
+			uv.x = -uv.x;
+		} else {
+			org = float2(1.0/6.0, 0.0);
+			uv.x = -uv.x;
+		}
+	} else if (a.z >= a.x && a.z >= a.y) {
+		uv = float2(v.x / a.z, -v.y / v.z);
+		if (v.z > 0.0) {
+			org = float2(4.0/6.0, 0.0);
+			uv.y = -uv.y;
+		} else {
+			org = float2(5.0/6.0, 0.0);
+			uv.y = -uv.y;
+		}
+	} else {
+		uv = float2(v.x / a.y, -v.z / v.y);
+		if (v.y > 0.0) {
+			org = float2(2.0/6.0, 0.0);
+		} else {
+			org = float2(3.0/6.0, 0.0);
+		}
+	}
+	uv = (uv + 1.0) * 0.5;
+	uv.x /= 6.0;
+	uv += org;
+	return tex2Dlod(smp, float4(uv.x, uv.y, 0.0, lvl));
+}
+
+float3 Simple_spec(float3 pos, float3 nrm, float2 uv, int env_mode) {
 	float3 ivec = normalize(pos - g_view_pos.xyz);
-	float4 env = Cube_env(nrm, ivec, g_smp_cube, g_env_param.w);
+	float4 env;
+	if (env_mode == D_ENVMAP_STRIP) {
+		env = Env_strip(nrm, ivec, g_smp_env, g_env_param.w);
+	} else {
+		env = Env_cube(nrm, ivec, g_smp_cube, g_env_param.w);
+	}
 	float4 mask = tex2D(g_smp_mask, uv);
 	float fr_scale = g_spec_param.x;
 	float fr_bias = g_spec_param.y;

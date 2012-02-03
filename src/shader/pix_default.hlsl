@@ -14,10 +14,10 @@ void main(PIX pix : TEXCOORD, float4 clr : TEXCOORD5, out float4 c : COLOR) {
 	float2 uv = pix.tex.xy;
 	float4 tex = tex2D(g_smp_base, uv);
 	float3 wn = NMap_normal(normalize(pix.wnrm), normalize(pix.wtng), normalize(pix.wbnm), g_smp_bump, uv);
-	float3 lc = Calc_omni_lights(wpos, wn) + SH(wn);
+	float3 lc = Calc_omni_lights(wpos, wn) + SH(wn) + g_ambient_color;
 	lc += clr.rgb;
 	c.rgb = tex.rgb * g_base_color.rgb * lc;
-	c.rgb += Simple_spec(wpos, wn, uv);
+	c.rgb += Simple_spec(wpos, wn, uv, D_ENVMAP_CUBE);
 	c.rgb = Fog(c.rgb, wpos, g_view_pos);
 	c.a = tex.a;
 }
