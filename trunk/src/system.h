@@ -163,6 +163,7 @@ void SYS_log(const char* fmt, ...);
 void* SYS_load(const char* fname);
 void SYS_get_input(void);
 sys_i64 SYS_get_timestamp(void);
+void SYS_init_FPU(void);
 
 #ifdef __cplusplus
 }

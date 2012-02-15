@@ -178,3 +178,23 @@ sys_i64 SYS_get_timestamp() {
 	return res;
 }
 
+void SYS_init_FPU() {
+#if !defined(_WIN64)
+#	if defined(_MSC_VER) || defined(__INTEL_COMPILER)
+	__asm {
+		push eax
+		fnstcw word ptr [esp]
+		pop eax
+		and ah, NOT 3
+		push eax
+		fldcw word ptr [esp]
+		pop eax
+	}
+#	elif defined (__GNUC__)
+	sys_ui16 fcw;
+	asm("fnstcw %w0" : "=m" (fcw));
+	fcw &= ~(3<<8);
+	asm("fldcw %w0" : : "m" (fcw));
+#	endif
+#endif
+}

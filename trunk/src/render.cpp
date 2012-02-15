@@ -1934,20 +1934,7 @@ void RDR_reset() {
 }
 
 void RDR_init_thread_FPU() {
-#if !defined(_WIN64)
-#	if defined(_MSC_VER) || defined(__INTEL_COMPILER)
-	__asm {
-		push eax
-		fnstcw word ptr [esp]
-		pop eax
-		and ah, NOT 3
-		push eax
-		fldcw word ptr [esp]
-		pop eax
-	}
-#	elif defined (__GNUC__)
-#	endif
-#endif
+	SYS_init_FPU();
 }
 
 void RDR_begin() {
