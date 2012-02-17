@@ -47,6 +47,7 @@ static RDR_TARGET* Rt_create_fp(int w, int h, bool mono_flg, D3DFORMAT fmt, D3DF
 static void Batch_exec(RDR_BATCH* pBatch);
 static void Set_vb(RDR_VTX_BUFFER* pVB);
 static void Set_rt(RDR_TARGET* pRT);
+static void Rdr_draw();
 
 template <int N> struct CONST_CACHE {
 	__m128 mState[N];
@@ -1042,18 +1043,102 @@ struct RDR_FOG {
 	}
 };
 
+struct RDR_THREAD {
+	HANDLE mHandle;
+	DWORD  mTid;
+	HANDLE mSig_exec;
+	HANDLE mSig_done;
+	bool   mFlg_end;
+	bool   mFlg_use;
+
+	void Loop() {
+		SetEvent(mSig_done);
+		while (!mFlg_end) {
+			if (WaitForSingleObject(mSig_exec, INFINITE) == WAIT_OBJECT_0) {
+				ResetEvent(mSig_exec);
+				if (!mFlg_end) {
+					Rdr_draw();
+				}
+				SetEvent(mSig_done);
+			}
+		}
+	}
+
+	static DWORD APIENTRY Main(void* pSelf) {
+		struct {
+			DWORD  type;
+			LPCSTR pName;
+			DWORD  tid;
+			DWORD  flg;
+		} info;
+		info.type = 0x1000;
+		info.pName = "rdr";
+		info.tid = -1;
+		info.flg = 0;
+		__try {
+			RaiseException(0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info);
+		} __except(EXCEPTION_CONTINUE_EXECUTION) {}
+		RDR_init_thread_FPU();
+		reinterpret_cast<RDR_THREAD*>(pSelf)->Loop();
+		return 0;
+	}
+
+	void Init() {
+		mFlg_use = !!CFG_get_i("rdr_thread", 0);
+		if (mFlg_use) {
+			mHandle = CreateThread(NULL, 0, Main, this, CREATE_SUSPENDED, &mTid);
+			if (mHandle) {
+				mSig_exec = CreateEvent(NULL, FALSE, FALSE, NULL);
+				mSig_done = CreateEvent(NULL, FALSE, FALSE, NULL);
+				mFlg_end = false;
+				ResumeThread(mHandle);
+				WaitForSingleObject(mSig_done, INFINITE);
+			} else {
+				mFlg_use = false;
+			}
+		}
+	}
+
+	void Reset() {
+		if (mFlg_use) {
+			mFlg_end = true;
+			ResetEvent(mSig_done);
+			SetEvent(mSig_exec);
+			WaitForSingleObject(mHandle, INFINITE);
+			CloseHandle(mSig_exec);
+			CloseHandle(mSig_done);
+			CloseHandle(mHandle);
+		}
+	}
+
+	void Exec() {
+		if (mFlg_use) {
+			ResetEvent(mSig_done);
+			SetEvent(mSig_exec);
+		}
+	}
+
+	void Wait() {
+		if (mFlg_use) {
+			WaitForSingleObject(mSig_done, INFINITE);
+		}
+	}
+};
+
 struct RDR_WORK {
 	IDirect3D9* mpD3D;
 	IDirect3DDevice9* mpDev;
 	D3DFORMAT mAdapter_fmt;
-	int max_tex_stg;
+	int mMax_tex_stg;
 
-	RDR_RSRC mRsrc;
-	RDR_DECL mDecl;
+	RDR_RSRC     mRsrc;
+	RDR_DECL     mDecl;
 	RDR_TGT_LIST mRT;
-	RDR_TARGET mMain_rt;
-	GPU_CODE mGpu_code;
-	RDR_IMG mImg;
+	RDR_TARGET   mMain_rt;
+	GPU_CODE     mGpu_code;
+	RDR_IMG      mImg;
+	RDR_FOG      mFog;
+	RDR_THREAD   mThread;
 
 	QMTX mShadow_view_proj;
 	QMTX mShadow_mtx;
@@ -1067,8 +1152,6 @@ struct RDR_WORK {
 	float mDepth_bias;
 	float mNrm_scale;
 	float mNrm_bias;
-
-	RDR_FOG mFog;
 
 #if (D_VTX_FVEC_CK > 0)
 	CONST_CACHE<D_VTX_FVEC_CK> mVtx_fvec_cache;
@@ -1095,14 +1178,14 @@ struct RDR_WORK {
 		mDb_wk.Init();
 		mGpu_code.Init();
 		mImg.Init();
+		mFog.Init();
+		mThread.Init();
 
 		mClear_color = D_RDR_ARGB32(0xFF, 0x55, 0x66, 0x77);
 
 		mDepth_bias = 0.0f;
 		mNrm_scale = 1.0f;
 		mNrm_bias = 0.0f;
-
-		mFog.Init();
 	}
 
 	void Set_vtx_const_f(const UVEC* pData, sys_uint org, sys_uint count) {
@@ -1793,7 +1876,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 			dev_flags |= D3DCREATE_PUREDEVICE;
 		}
 	}
-	pRdr->max_tex_stg = dev_caps.MaxSimultaneousTextures;
+	pRdr->mMax_tex_stg = dev_caps.MaxSimultaneousTextures;
 	memset(&present_params, 0, sizeof(D3DPRESENT_PARAMETERS));
 	present_params.hDeviceWindow = (HWND)hWnd;
 	present_params.Windowed = fullscreen ? FALSE : TRUE;
@@ -1929,8 +2012,10 @@ void RDR_reset() {
 	RDR_WORK* pRdr = &s_rdr;
 	IDirect3DDevice9* pDev = pRdr->mpDev;
 
+	pRdr->mThread.Reset();
+
 	if (pDev) {
-		for (i = 0; i < pRdr->max_tex_stg; ++i) {
+		for (i = 0; i < pRdr->mMax_tex_stg; ++i) {
 			pDev->SetTexture(i, NULL);
 		}
 		pDev->SetVertexShader(NULL);
@@ -1970,7 +2055,9 @@ void RDR_init_thread_FPU() {
 }
 
 void RDR_begin() {
-	s_rdr.mDb_wk.Begin();
+	RDR_WORK* pRdr = &s_rdr;
+	pRdr->mThread.Exec();
+	pRdr->mDb_wk.Begin();
 }
 
 void Set_vb(RDR_VTX_BUFFER* pVB) {
@@ -2265,7 +2352,7 @@ static void Rdr_exec_cc() {
 	}
 }
 
-void RDR_exec() {
+void Rdr_draw() {
 	RDR_WORK* pRdr = &s_rdr;
 	RDR_GPARAM* pGP = &g_rdr_param;
 	IDirect3DDevice9* pDev = pRdr->mpDev;
@@ -2285,9 +2372,20 @@ void RDR_exec() {
 	Cpy_back(pRdr->mRT.mpScene, D3DTEXF_POINT);
 	Rdr_exec_cc();
 	pDev->EndScene();
+}
+
+void RDR_exec() {
+	RDR_WORK* pRdr = &s_rdr;
+	IDirect3DDevice9* pDev = pRdr->mpDev;
+
+	if (pRdr->mThread.mFlg_use) {
+		pRdr->mThread.Wait();
+	} else {
+		Rdr_draw();
+	}
 
 	pDev->Present(NULL, NULL, NULL, NULL);
-	pRdr->mDb_wk.Flip();/////////////////////////
+	pRdr->mDb_wk.Flip();
 }
 
 void RDR_set_nvec_encoding(float scale, float bias) {
