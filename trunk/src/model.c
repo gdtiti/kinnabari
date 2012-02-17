@@ -412,7 +412,6 @@ void MDL_disp(MODEL* pMdl) {
 
 			pBatch->blend_state.on = 0;
 			pBatch->draw_state.cull = E_RDR_CULL_CCW;
-			pBatch->draw_state.msaa = 0;
 			pBatch->draw_state.zwrite = 1;
 
 			pBatch->nb_param = 1;
