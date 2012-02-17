@@ -72,10 +72,6 @@ void CAM_set_view(CAMERA* pCam, QVEC pos, QVEC tgt, QVEC up) {
 	pCam->up.qv = V4_normalize(V4_set_w0(up));
 }
 
-static QVEC Cam_frustum_norm(QVEC v0, QVEC v1, QVEC v2) {
-	return V4_normalize(V4_cross(V4_sub(v0, v1), V4_sub(v2, v1)));
-}
-
 static void Cam_update_frustum(CAMERA* pCam) {
 	GEOM_frustum_init(&pCam->frustum, pCam->mtx_view_i, pCam->fovy, pCam->aspect, pCam->znear, pCam->zfar);
 }

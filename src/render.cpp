@@ -1806,6 +1806,38 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 		present_params.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 		present_params.FullScreen_RefreshRateInHz = 60;
 	}
+	int msaa_val = CFG_get_i("msaa", 0);
+	if (msaa_val) {
+		DWORD nb_qlvl;
+		D3DMULTISAMPLE_TYPE msaa_type = D3DMULTISAMPLE_NONE;
+		switch (msaa_val) {
+			case 2:
+				msaa_type = D3DMULTISAMPLE_2_SAMPLES;
+				break;
+			case 4:
+				msaa_type = D3DMULTISAMPLE_4_SAMPLES;
+				break;
+			case 8:
+				msaa_type = D3DMULTISAMPLE_8_SAMPLES;
+				break;
+			default:
+				break;
+		}
+		if (msaa_type != D3DMULTISAMPLE_NONE) {
+			hres = pRdr->mpD3D->CheckDeviceMultiSampleType(adapter, D3DDEVTYPE_HAL, present_params.BackBufferFormat, present_params.Windowed, msaa_type, &nb_qlvl);
+			if (SUCCEEDED(hres)) {
+				present_params.MultiSampleType = msaa_type;
+				present_params.MultiSampleQuality = nb_qlvl - 1;
+			} else {
+				msaa_type = D3DMULTISAMPLE_2_SAMPLES;
+				hres = pRdr->mpD3D->CheckDeviceMultiSampleType(adapter, D3DDEVTYPE_HAL, D3DFMT_A8R8G8B8, present_params.Windowed, msaa_type, &nb_qlvl);
+				if (SUCCEEDED(hres)) {
+					present_params.MultiSampleType = msaa_type;
+					present_params.MultiSampleQuality = nb_qlvl - 1;
+				}
+			}
+		}
+	}
 	present_params.BackBufferWidth = width;
 	present_params.BackBufferHeight = height;
 	present_params.EnableAutoDepthStencil = TRUE;
