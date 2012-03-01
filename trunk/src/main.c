@@ -64,21 +64,9 @@ static void Data_free() {
 }
 
 static void Wrk_init_func(JOB_WORKER* pWrk) {
-	struct {
-		DWORD  type;
-		LPCSTR pName;
-		DWORD  tid;
-		DWORD  flg;
-	} info;
 	static char* names[] = {"wrk0", "wrk1", "wrk2", "wrk3", "wrk4", "wrk5", "wrk6", "wrk7"};
 	SYS_log("Initializing worker %d\n", pWrk->id);
-	info.type = 0x1000;
-	info.pName = names[pWrk->id & 7];
-	info.tid = -1;
-	info.flg = 0;
-	__try {
-		RaiseException(0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info);
-	} __except(EXCEPTION_CONTINUE_EXECUTION) {}
+	JOB_set_worker_name(names[pWrk->id & 7]);
 	RDR_init_thread_FPU();
 }
 

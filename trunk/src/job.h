@@ -69,4 +69,9 @@ D_EXTERN_FUNC void JOB_put(JOB_QUEUE* pQue, JOB* pJob);
 D_EXTERN_FUNC void JOB_schedule(JOB_QUEUE* pQue, sys_int nb_wrk);
 D_EXTERN_FUNC void JOB_lock(void);
 D_EXTERN_FUNC void JOB_unlock(void);
+D_EXTERN_FUNC void JOB_set_worker_name(const char* pName);
 D_EXTERN_FUNC sys_int JOB_get_worker_id(void);
+
+D_EXTERN_FUNC sys_i32 SYNC_inc(sys_i32* pVal);
+D_EXTERN_FUNC sys_i32 SYNC_dec(sys_i32* pVal);
+

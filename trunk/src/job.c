@@ -194,6 +194,22 @@ void JOB_unlock() {
 	LeaveCriticalSection(&s_job_cs);
 }
 
+void JOB_set_worker_name(const char* pName) {
+	struct {
+		DWORD  type;
+		LPCSTR pName;
+		DWORD  tid;
+		DWORD  flg;
+	} info;
+	info.type = 0x1000;
+	info.pName = pName;
+	info.tid = -1;
+	info.flg = 0;
+	__try {
+		RaiseException(0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info);
+	} __except(EXCEPTION_CONTINUE_EXECUTION) {}
+}
+
 sys_int JOB_get_worker_id() {
 	int i;
 	JOB_SYS* pSys = &g_job_sys;
@@ -209,5 +225,14 @@ sys_int JOB_get_worker_id() {
 		++pWrk;
 	}
 	return id;
+}
+
+
+sys_i32 SYNC_inc(sys_i32* pVal) {
+	return D_SYNC_INC(pVal);
+}
+
+sys_i32 SYNC_dec(sys_i32* pVal) {
+	return D_SYNC_DEC(pVal);
 }
 
