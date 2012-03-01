@@ -26,6 +26,7 @@
 #include "system.h"
 #include "calc.h"
 #include "util.h"
+#include "job.h"
 #include "render.h"
 
 #define D_PIX_BOOL_CK (16)
@@ -1065,19 +1066,7 @@ struct RDR_THREAD {
 	}
 
 	static DWORD APIENTRY Main(void* pSelf) {
-		struct {
-			DWORD  type;
-			LPCSTR pName;
-			DWORD  tid;
-			DWORD  flg;
-		} info;
-		info.type = 0x1000;
-		info.pName = "rdr";
-		info.tid = -1;
-		info.flg = 0;
-		__try {
-			RaiseException(0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info);
-		} __except(EXCEPTION_CONTINUE_EXECUTION) {}
+		JOB_set_worker_name("rdr");
 		RDR_init_thread_FPU();
 		reinterpret_cast<RDR_THREAD*>(pSelf)->Loop();
 		return 0;
