@@ -267,6 +267,7 @@ void MTX_calc_pnt(VEC vdst, MTX m, VEC vsrc);
 QVEC MTX_calc_qvec(MTX m, QVEC v);
 QVEC MTX_calc_qpnt(MTX m, QVEC v);
 QVEC MTX_apply(MTX m, QVEC v);
+QVEC MTX_get_rot_xyz(MTX m);
 
 QVEC QUAT_from_axis_angle(QVEC axis, float ang);
 QVEC QUAT_from_mtx(MTX m);
@@ -329,9 +330,11 @@ int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1);
 int GEOM_cap_obb_check(GEOM_CAPSULE* pCap, GEOM_OBB* pBox);
 void GEOM_aabb_init(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
+void GEOM_aabb_from_frustum(GEOM_AABB* pBox, GEOM_FRUSTUM* pFst);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
 int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
 void GEOM_obb_from_mtx(GEOM_OBB* pBox, MTX m);
+void GEOM_obb_from_frustum(GEOM_OBB* pBox, GEOM_FRUSTUM* pFst);
 int GEOM_obb_overlap(GEOM_OBB* pBox0, GEOM_OBB* pBox1);
 void GEOM_dop8_init(GEOM_DOP8* pDOP);
 void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos);
@@ -343,10 +346,10 @@ int GEOM_seg_polyhedron_intersect(QVEC p0, QVEC p1, GEOM_PLANE* pPln, int n, QVE
 int GEOM_seg_aabb_check(QVEC p0, QVEC p1, GEOM_AABB* pBox);
 int GEOM_seg_obb_check(QVEC p0, QVEC p1, GEOM_OBB* pBox);
 int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
-void GEOM_frustum_init(GEOM_FRUSTUM* pVol, MTX m, float fovy, float aspect, float znear, float zfar);
-int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
-int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pVol, GEOM_AABB* pBox);
-int GEOM_frustum_sph_cull(GEOM_FRUSTUM* pVol, GEOM_SPHERE* pSph);
+void GEOM_frustum_init(GEOM_FRUSTUM* pFst, MTX m, float fovy, float aspect, float znear, float zfar);
+int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pFst, GEOM_AABB* pBox);
+int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pFst, GEOM_AABB* pBox);
+int GEOM_frustum_sph_cull(GEOM_FRUSTUM* pFst, GEOM_SPHERE* pSph);
 
 #ifdef __cplusplus
 }
