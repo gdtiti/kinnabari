@@ -262,6 +262,7 @@ void MTX_rot_xyz(MTX m, float rx, float ry, float rz);
 void MTX_rot_axis(MTX m, QVEC axis, float rad);
 void MTX_make_view(MTX m, QVEC pos, QVEC tgt, QVEC upvec);
 void MTX_make_proj(MTX m, float fovy, float aspect, float znear, float zfar);
+void MTX_make_frame(MTX m, QVEC dir, int hou_flg);
 void MTX_calc_vec(VEC vdst, MTX m, VEC vsrc);
 void MTX_calc_pnt(VEC vdst, MTX m, VEC vsrc);
 QVEC MTX_calc_qvec(MTX m, QVEC v);
@@ -349,6 +350,8 @@ int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord);
 void GEOM_frustum_init(GEOM_FRUSTUM* pFst, MTX m, float fovy, float aspect, float znear, float zfar);
 int GEOM_frustum_aabb_check(GEOM_FRUSTUM* pFst, GEOM_AABB* pBox);
 int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pFst, GEOM_AABB* pBox);
+int GEOM_frustum_obb_check(GEOM_FRUSTUM* pFst, GEOM_OBB* pBox);
+int GEOM_frustum_obb_cull(GEOM_FRUSTUM* pFst, GEOM_OBB* pBox);
 int GEOM_frustum_sph_cull(GEOM_FRUSTUM* pFst, GEOM_SPHERE* pSph);
 
 #ifdef __cplusplus
