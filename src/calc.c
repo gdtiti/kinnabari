@@ -977,6 +977,28 @@ void MTX_make_proj(MTX m, float fovy, float aspect, float znear, float zfar) {
 	m[3][2] = -q * znear;
 }
 
+void MTX_make_frame(MTX m, QVEC dir, int hou_flg) {
+	QVEC up;
+	QVEC side;
+	UVEC v;
+	v.qv = dir;
+	if (hou_flg) {
+		if (v.x > -0.6f && v.x < 0.6f) up = V4_load(g_identity[0]);
+		else if (v.z > -0.6f && v.z < 0.6f) up = V4_load(g_identity[1]);
+		else up = V4_load(g_identity[2]);
+	} else {
+		if (v.y > -0.6f && v.y < 0.6f) up = V4_load(g_identity[1]);
+		else if (v.z > -0.6f && v.z < 0.6f) up = V4_load(g_identity[2]);
+		else up = V4_load(g_identity[0]);
+	}
+	side = V4_normalize(V4_cross(up, dir));
+	up = V4_normalize(V4_cross(dir, side));
+	V4_store(m[0], side);
+	V4_store(m[1], up);
+	V4_store(m[2], dir);
+	V4_store(m[3], V4_load(g_identity[3]));
+}
+
 void MTX_calc_vec(VEC vdst, MTX m, VEC vsrc) {
 #if D_KISS
 	float x = vsrc[0];
@@ -2280,7 +2302,7 @@ int GEOM_seg_obb_check(QVEC p0, QVEC p1, GEOM_OBB* pBox) {
 	QVEC tp1;
 	QVEC rv = pBox->rad.qv;
 	aabb.min.qv = V4_set_w1(V4_scale(rv, -1.0f));
-	aabb.max.qv = rv;
+	aabb.max.qv = V4_set_w1(rv);
 	MTX_invert_fast(im, pBox->mtx);
 	tp0 = MTX_apply(im, p0);
 	tp1 = MTX_apply(im, p1);
@@ -2322,6 +2344,23 @@ int GEOM_barycentric(QVEC pos, QVEC* pVtx, QVEC* pCoord) {
 	return res;
 }
 
+static void Calc_frustum_normals(GEOM_FRUSTUM* pFst) {
+	pFst->nrm[0].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[1].qv, pFst->pnt[3].qv); /* near */
+	pFst->nrm[1].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[3].qv, pFst->pnt[4].qv); /* left */
+	pFst->nrm[2].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[4].qv, pFst->pnt[5].qv); /* top */
+	pFst->nrm[3].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[2].qv, pFst->pnt[1].qv); /* right */
+	pFst->nrm[4].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[7].qv, pFst->pnt[3].qv); /* bottom */
+	pFst->nrm[5].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[5].qv, pFst->pnt[4].qv); /* far */
+}
+
+static void Calc_frustum_planes(GEOM_FRUSTUM* pFst) {
+	int i;
+	for (i = 0; i < 6; ++i) {
+		static int vtx_no[] = {0, 0, 0, 6, 6, 6};
+		pFst->pln[i].qv = GEOM_get_plane(pFst->pnt[vtx_no[i]].qv, pFst->nrm[i].qv);
+	}
+}
+
 void GEOM_frustum_init(GEOM_FRUSTUM* pFst, MTX m, float fovy, float aspect, float znear, float zfar) {
 	int i;
 	float t;
@@ -2342,22 +2381,14 @@ void GEOM_frustum_init(GEOM_FRUSTUM* pFst, MTX m, float fovy, float aspect, floa
 	pFst->pnt[5].qv = V4_set( x,  y, -z, 1.0f);
 	pFst->pnt[6].qv = V4_set( x, -y, -z, 1.0f);
 	pFst->pnt[7].qv = V4_set(-x, -y, -z, 1.0f);
-	pFst->nrm[0].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[1].qv, pFst->pnt[3].qv); /* near */
-	pFst->nrm[1].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[3].qv, pFst->pnt[4].qv); /* left */
-	pFst->nrm[2].qv = GEOM_tri_norm_cw(pFst->pnt[0].qv, pFst->pnt[4].qv, pFst->pnt[5].qv); /* top */
-	pFst->nrm[3].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[2].qv, pFst->pnt[1].qv); /* right */
-	pFst->nrm[4].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[7].qv, pFst->pnt[3].qv); /* bottom */
-	pFst->nrm[5].qv = GEOM_tri_norm_cw(pFst->pnt[6].qv, pFst->pnt[5].qv, pFst->pnt[4].qv); /* far */
+	Calc_frustum_normals(pFst);
 	for (i = 0; i < 8; ++i) {
 		pFst->pnt[i].qv = MTX_apply(m, pFst->pnt[i].qv);
 	}
 	for (i = 0; i < 6; ++i) {
 		pFst->nrm[i].qv = MTX_apply(m, pFst->nrm[i].qv);
 	}
-	for (i = 0; i < 6; ++i) {
-		static int vtx_no[] = {0, 0, 0, 6, 6, 6};
-		pFst->pln[i].qv = GEOM_get_plane(pFst->pnt[vtx_no[i]].qv, pFst->nrm[i].qv);
-	}
+	Calc_frustum_planes(pFst);
 }
 
 #define _D_MK_AABB_VTX(_px, _py, _pz) V4_set_pnt(pBox->##_px.x, pBox->##_py.y, pBox->##_pz.z)
@@ -2418,6 +2449,55 @@ int GEOM_frustum_aabb_cull(GEOM_FRUSTUM* pFst, GEOM_AABB* pBox) {
 		QVEC nrm = pFst->nrm[i].qv;
 		if (i == 3) vec = V4_sub(cvec, pFst->pnt[6].qv);
 		if (V4_dot4(rvec, V4_abs(nrm)) < V4_dot4(vec, nrm)) return 1;
+	}
+	return 0;
+}
+
+int GEOM_frustum_obb_check(GEOM_FRUSTUM* pFst, GEOM_OBB* pBox) {
+	int i;
+	QMTX m;
+	QVEC rv;
+	GEOM_AABB aabb;
+	GEOM_FRUSTUM fst;
+
+	rv = pBox->rad.qv;
+	aabb.min.qv = V4_set_w1(V4_scale(rv, -1.0f));
+	aabb.max.qv = V4_set_w1(rv);
+	MTX_invert_fast(m, pBox->mtx);
+	for (i = 0; i < 8; ++i) {
+		fst.pnt[i].qv = MTX_calc_qpnt(m, pFst->pnt[i].qv);
+	}
+	if (1) {
+		Calc_frustum_normals(&fst);
+	} else {
+		for (i = 0; i < 6; ++i) {
+			fst.nrm[i].qv = MTX_calc_qvec(m, pFst->nrm[i].qv);
+		}
+	}
+	Calc_frustum_planes(&fst);
+	return GEOM_frustum_aabb_check(&fst, &aabb);
+}
+
+int GEOM_frustum_obb_cull(GEOM_FRUSTUM* pFst, GEOM_OBB* pBox) {
+	QVEC cvec;
+	QVEC rvec;
+	QVEC vec;
+	QVEC vx, vy, vz;
+	int i;
+	float r, d;
+
+	vx = V4_load(pBox->mtx[0]);
+	vy = V4_load(pBox->mtx[1]);
+	vz = V4_load(pBox->mtx[2]);
+	cvec = pBox->pos.qv;
+	rvec = pBox->rad.qv;
+	vec = V4_sub(cvec, pFst->pnt[0].qv);
+	for (i = 0; i < 6; ++i) {
+		QVEC nrm = pFst->nrm[i].qv;
+		if (i == 3) vec = V4_sub(cvec, pFst->pnt[6].qv);
+		r = V4_dot4(rvec, V4_abs(V4_set_vec(V4_dot4(nrm, vx), V4_dot4(nrm, vy), V4_dot4(nrm, vz))));
+		d = V4_dot4(vec, nrm);
+		if (r < d) return 1;
 	}
 	return 0;
 }
