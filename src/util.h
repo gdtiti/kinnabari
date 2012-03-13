@@ -55,6 +55,7 @@ typedef struct _DICT {
 	sys_int    size;
 	struct _DICT_ATTR {
 		sys_ui32 copy_keys : 1; /* off by default */
+		sys_ui32 hash_addr : 1;
 	} attr;
 } DICT;
 
@@ -109,6 +110,7 @@ D_EXTERN_FUNC DICT* DICT_create(sys_int capacity, float load_factor);
 D_EXTERN_FUNC DICT* DICT_new(void);
 D_EXTERN_FUNC void DICT_destroy(DICT* pDict);
 D_EXTERN_FUNC void DICT_set_copy_keys(DICT* pDict, int on_off);
+D_EXTERN_FUNC void DICT_set_hash_addr(DICT* pDict, int on_off);
 D_EXTERN_FUNC DICT_VAL DICT_get(DICT* pDict, const char* pKey);
 D_EXTERN_FUNC sys_int DICT_get_i(DICT* pDict, const char* pKey);
 D_EXTERN_FUNC void* DICT_get_p(DICT* pDict, const char* pKey);
