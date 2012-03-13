@@ -74,7 +74,7 @@ static sys_int Dict_get_prime(sys_int x) {
 	return Dict_calc_prime(x);
 }
 
-static sys_int Dict_calc_hash(const char* s) {
+static sys_int Dict_str_hash(const char* s) {
 	sys_int h = 0;
 	char c;
 	if (s) {
@@ -86,6 +86,17 @@ static sys_int Dict_calc_hash(const char* s) {
 	return h;
 }
 
+static sys_int Dict_calc_hash(DICT* pDict, const char* s) {
+	if (pDict->attr.hash_addr) {
+		union {
+			sys_intptr ptr;
+			sys_int i;
+		} h;
+		h.ptr = ((sys_intptr)s) >> 4;
+		return h.i;
+	}
+	return Dict_str_hash(s);
+}
 
 SYM_POOL* DICT_pool_create() {
 	SYM_POOL* pSelf = (SYM_POOL*)SYS_malloc(sizeof(SYM_POOL) + D_SYMPOOL_DEF_SIZE);
@@ -94,8 +105,6 @@ SYM_POOL* DICT_pool_create() {
 	pSelf->pNext = NULL;
 	return pSelf;
 }
-
-
 
 void DICT_pool_destroy(SYM_POOL* pSelf) {
 	SYM_POOL* p = pSelf;
@@ -166,6 +175,7 @@ DICT* DICT_create(sys_int capacity, float load_factor) {
 	pDict->pTbl = NULL;
 	Dict_set_tbl(pDict, Dict_alloc_tbl(pDict->size));
 	pDict->attr.copy_keys = 0;
+	pDict->attr.hash_addr = 0;
 	return pDict;
 }
 
@@ -192,6 +202,10 @@ void DICT_destroy(DICT* pDict) {
 
 void DICT_set_copy_keys(DICT* pDict, int on_off) {
 	pDict->attr.copy_keys = !!on_off;
+}
+
+void DICT_set_hash_addr(DICT* pDict, int on_off) {
+	pDict->attr.hash_addr = !!on_off;
 }
 
 static void Dict_rehash(DICT* pDict) {
@@ -234,7 +248,8 @@ static char* Dict_mk_key(DICT* pDict, const char* pKey) {
 	return p;
 }
 
-static int Dict_key_eq(const char* k1, const char* k2) {
+static int Dict_key_eq(DICT* pDict, const char* k1, const char* k2) {
+	if (pDict->attr.hash_addr) return (k1 == k2);
 	return (k1 == k2 || 0 == strcmp(k1, k2));
 }
 
@@ -249,7 +264,7 @@ static char* Dict_put_impl(DICT* pDict, const char* pKey, DICT_VAL val, int over
 		size = (sys_uint)pDict->size;
 	}
 
-	h = Dict_calc_hash(pKey) & D_DICT_MAX_INT32;
+	h = Dict_calc_hash(pDict, pKey) & D_DICT_MAX_INT32;
 	spot = (sys_uint)h;
 	step = D_DICT_HSTEP(h, size);
 
@@ -268,7 +283,7 @@ static char* Dict_put_impl(DICT* pDict, const char* pKey, DICT_VAL val, int over
 					break;
 		}
 
-		if ((pEntry->hash_mix & D_DICT_MAX_INT32) == h && Dict_key_eq(pKey, pEntry->pKey)) {
+		if ((pEntry->hash_mix & D_DICT_MAX_INT32) == h && Dict_key_eq(pDict, pKey, pEntry->pKey)) {
 			if (overwrite) {
 				pDict->pTbl[idx].val = val;
 				return pEntry->pKey;
@@ -300,7 +315,7 @@ static sys_int Dict_find(DICT* pDict, const char* pKey) {
 	DICT_SLOT* pEntry;
 
 	size = (sys_uint)pDict->size;
-	h = Dict_calc_hash(pKey) & D_DICT_MAX_INT32;
+	h = Dict_calc_hash(pDict, pKey) & D_DICT_MAX_INT32;
 	spot = (sys_uint)h;
 	step = D_DICT_HSTEP(h, size);
 
@@ -308,7 +323,7 @@ static sys_int Dict_find(DICT* pDict, const char* pKey) {
 		idx = (sys_int)(spot % size);
 		pEntry = &pDict->pTbl[idx];
 		if (!pEntry->pKey) return -1;
-		if ((pEntry->hash_mix & D_DICT_MAX_INT32) == h && Dict_key_eq(pKey, pEntry->pKey)) {
+		if ((pEntry->hash_mix & D_DICT_MAX_INT32) == h && Dict_key_eq(pDict, pKey, pEntry->pKey)) {
 			return idx;
 		}
 		if (0 == (pEntry->hash_mix & D_DICT_CHAIN_MARKER)) return -1;
