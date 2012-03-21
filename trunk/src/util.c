@@ -49,7 +49,7 @@ static struct _CFG_WK {
 static int Dict_prime_ck(sys_int x) {
 	sys_int n;
 	if (x & 1) {
-		int lim = (int)sqrt(x);
+		int lim = (int)sqrtf((float)x);
 		for (n = 3; n < lim; n += 2) {
 			if ((x % n) == 0) return 0;
 		}
@@ -336,6 +336,7 @@ static sys_int Dict_find(DICT* pDict, const char* pKey) {
 DICT_VAL DICT_get(DICT* pDict, const char* pKey) {
 	DICT_VAL val;
 	sys_int i = Dict_find(pDict, pKey);
+	val.pVal = NULL;
 	val.iVal = 0;
 	if (i >= 0) val = pDict->pTbl[i].val;
 	return val;
@@ -461,7 +462,7 @@ UTL_GEOMETRY* GMT_load(const char* fname) {
 	GMT_HEAD* pHead;
 	UTL_GEOMETRY* pGeo = NULL;
 
-	pHead = SYS_load(fname);
+	pHead = (GMT_HEAD*)SYS_load(fname);
 	if (pHead && pHead->magic == D_FOURCC('G','M','T','\0')) {
 		pGeo = (UTL_GEOMETRY*)SYS_malloc(sizeof(UTL_GEOMETRY));
 		pGeo->pData = pHead;
