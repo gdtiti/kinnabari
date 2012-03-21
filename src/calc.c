@@ -1697,7 +1697,7 @@ QVEC _GEOM_get_plane_static(QVEC pos, QVEC nrm) {
 
 D_FORCE_INLINE QVEC GEOM_get_plane(QVEC pos, QVEC nrm) {
 	QVEC n = V4_set_w0(nrm);
-	float d = V4_dot4(pos, nrm);
+	float d = V4_dot4(pos, n);
 	return V4_set(V4_at(n, 0), V4_at(n, 1), V4_at(n, 2), d);
 }
 
