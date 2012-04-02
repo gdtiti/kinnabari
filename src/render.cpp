@@ -818,6 +818,14 @@ struct RDR_RSRC {
 		RDR_TARGET* pRT = *ppRT;
 		if (pRT) {
 			ULONG refs;
+			if (pRT->hDepth_surf) {
+				refs = ((IUnknown*)pRT->hDepth_surf)->Release();
+				pRT->hDepth_surf = NULL;
+			}
+			if (pRT->hTgt_surf) {
+				refs = ((IUnknown*)pRT->hTgt_surf)->Release();
+				pRT->hTgt_surf = NULL;
+			}
 			if (pRT->hDepth) {
 				refs = Safe_release((IUnknown*)pRT->hDepth);
 				if (refs == 0) {
