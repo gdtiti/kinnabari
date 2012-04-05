@@ -99,9 +99,7 @@ float KFR_eval(KFR_HEAD* pKfr, KFR_CHANNEL* pCh, float frame, sys_ui16* pState) 
 		}
 		while (cnt) {
 			if (fno == pCh->frm_no[istart]) {
-				if (*pState) {
-					*pState = istart;
-				}
+				*pState = istart;
 				return pKey[istart].val;
 			}
 			iend = istart + 1;
