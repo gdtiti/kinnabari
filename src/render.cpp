@@ -187,12 +187,13 @@ struct GPU_CODE {
 	void Set_prog_params(RDR_PROG* pProg, bool vtx_flg) {
 		UVEC vtmp[32];
 		UVEC* pVec;
-		sys_uint i, j;
-		sys_uint n = pProg->pInfo->nb_param;
-		RDR_GPARAM_INFO* pInfo = Get_prog_param_info(pProg);
+		sys_uint i, j, n;
+		RDR_GPARAM_INFO* pInfo;
 		RDR_GPARAM* pGP = &g_rdr_param;
 
 		if (!pProg) return;
+		n = pProg->pInfo->nb_param;
+		pInfo = Get_prog_param_info(pProg);
 		memset(vtmp, 0, sizeof(vtmp));
 		for (i = 0; i < n; ++i) {
 			switch (pInfo->id.type) {
