@@ -27,8 +27,12 @@ float Spec_pow(float d, float shin) {
 #endif
 }
 
+float Fresnel_pow(float x, float e) {
+	return pow(x, e);
+}
+
 float Fresnel_val(float tcos, float scale, float bias, float pwr) {
-	return saturate((Spec_pow(1.0f - tcos, pwr) * scale) + bias);
+	return saturate((Fresnel_pow(1.0f - tcos, pwr) * scale) + bias);
 }
 
 float Fresnel(float3 ivec, float3 norm, float scale, float bias, float pwr) {
@@ -41,7 +45,8 @@ float3 Decode_nmap(float4 ntex) {
 	ntex += ntex;
 	float nx = ntex.a;
 	float ny = ntex.g;
-	float nz = sqrt(1.0f - nx*nx - ny*ny);
+	float zz = max(1.0f - nx*nx - ny*ny, 0.0);
+	float nz = sqrt(zz);
 	return float3(nx, ny, nz);
 }
 
