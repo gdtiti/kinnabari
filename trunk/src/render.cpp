@@ -304,11 +304,63 @@ struct RDR_LAYER {
 		}
 	}
 
+	void Swap(int i0, int i1) {
+		sys_ui32 k = mpKey[i0];
+		mpKey[i0] = mpKey[i1];
+		mpKey[i1] = k;
+		RDR_BATCH* pBatch = mppBatch[i0];
+		mppBatch[i0] = mppBatch[i1];
+		mppBatch[i1] = pBatch;
+	}
+
+	void Sort_sub(int left, int right) {
+		int count, mid, lo, hi;
+
+		count = right - left;
+		if (count < 0) return;
+		mid = count / 2;
+		lo = left;
+		hi = right;
+		sys_ui32* pKey = mpKey;
+		sys_ui32 k = pKey[left + mid];
+		while (lo < hi) {
+			if (pKey[lo] < k) {
+				++lo;
+			} else if (pKey[hi] > k) {
+				--hi;
+			} else {
+				Swap(lo, hi);
+				++lo;
+				--hi;
+			}
+		}
+		if (lo == hi) {
+			if (count == 1) return;
+			if (pKey[lo] < k) {
+				++lo;
+			} else {
+				--hi;
+			}
+		}
+		if (left < hi) {
+			Sort_sub(left, hi);
+		}
+		if (lo < right) {
+			Sort_sub(lo, right);
+		}
+	}
+
+	void Sort() {
+		if (!mpKey || mCount <= 0) return;
+		Sort_sub(0, mCount-1);
+	}
+
 	void Exec() {
 		int i, n;
 		RDR_BATCH** ppBatch = mppBatch;
 		n = mCount;
 		//if (n <= 0) return;
+		Sort();
 		if (mpPrologue) {
 			mpPrologue(this);
 		}
