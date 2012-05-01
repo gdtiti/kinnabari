@@ -287,6 +287,9 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 		c1 = D_CLAMP(c1, -1, 1);
 		rot0 = -acosf(c0);
 		rot1 = D_PI - acosf(c1);
+	} else {
+		rot0 = 0.0f;
+		rot1 = 0.0f;
 	}
 	ax = MTX_calc_qvec(top_mtx, V4_load(g_identity[0]));
 	ax = V4_normalize(ax);
