@@ -1974,7 +1974,7 @@ void RDR_init(void* hWnd, int width, int height, int fullscreen) {
 	present_params.BackBufferWidth = width;
 	present_params.BackBufferHeight = height;
 	present_params.EnableAutoDepthStencil = TRUE;
-	present_params.AutoDepthStencilFormat = D3DFMT_D16;
+	present_params.AutoDepthStencilFormat = D3DFMT_D24S8;
 	pRdr->mAdapter_fmt = present_params.BackBufferFormat;
 	hres = pRdr->mpD3D->CreateDevice(adapter, D3DDEVTYPE_HAL, (HWND)hWnd, dev_flags, &present_params, &pRdr->mpDev);
 	if (FAILED(hres)) {
