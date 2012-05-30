@@ -6,7 +6,7 @@
 #include "depth.h"
 
 void main(float4 cpos : TEXCOORD0, out float4 c : COLOR) {
-	float z = cpos.z * cpos.w;
+	float z = cpos.z / cpos.w;
 	c.rgb = Encode_D24(z);
 	c.a = 1.0;
 }
