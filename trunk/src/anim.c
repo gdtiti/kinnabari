@@ -36,6 +36,8 @@ static void KC_init(ANIMATION* pAnm, KIN_CHAIN* pKC, JOINT* pJnt_top, JOINT* pJn
 	pKC->pJnt_rot = pJnt_rot;
 	pKC->pJnt_end = pJnt_end;
 	pKC->end_pos.qv = V4_set_w1(V4_scale(V4_load(pAnm->pMdl->pOmd->pJnt_inv[pJnt_end->pInfo->id][3]), -1.0f));
+	pKC->foot_rz_factor = 0.5f;
+	pKC->attr = E_KCATTR_FLOORADJ;
 }
 
 ANIMATION* ANM_create(MODEL* pMdl) {
@@ -244,9 +246,14 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 	QVEC ax;
 	QVEC ay;
 	QVEC az;
+	UVEC floor_pos;
+	UVEC floor_nml;
 	JOINT* pJnt;
 	MODEL* pMdl = pAnm->pMdl;
 	float dist, len0, len1, rot0, rot1;
+	int foot_adj = 0;
+	float frx = 0.0f;
+	float frz = 0.0f;
 
 	MTX_rot_xyz(top_mtx, pKC->top_rot.x, pKC->top_rot.y, pKC->top_rot.z);
 	V4_store(top_mtx[3], V4_set_w1(pKC->pJnt_top->pInfo->offs_len.qv));
@@ -262,9 +269,7 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 	MTX_mul(top_mtx, top_mtx, parent_mtx);
 
 	end_pos = MTX_calc_qpnt(pMdl->root_mtx, pKC->end_pos.qv);
-	if (g_ik_floor_func) {
-		UVEC floor_pos;
-		UVEC floor_nml;
+	if (g_ik_floor_func && (pKC->attr & E_KCATTR_FLOORADJ)) {
 		if (g_ik_floor_func(end_pos, 1.0f, &floor_pos, &floor_nml)) {
 			UVEC tpos;
 			float ankle_h = pAnm->ankle_height;
@@ -272,6 +277,9 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 			if (tpos.y - ankle_h < floor_pos.y) {
 				tpos.y = floor_pos.y + ankle_h;
 				end_pos = tpos.qv;
+				if (pKC->attr & E_KCATTR_FOOTROT) {
+					foot_adj = 1;
+				}
 			}
 		}
 	}
@@ -325,6 +333,25 @@ static void KC_calc(ANIMATION* pAnm, KIN_CHAIN* pKC) {
 
 	MTX_invert_fast(imtx, top_mtx);
 	MTX_mul(pKC->pJnt_rot->mtx, rot_mtx, imtx);
+
+	if (foot_adj) {
+		MTX_mul(ik_mtx, pKC->pJnt_end->mtx, rot_mtx);
+		MTX_invert_fast(imtx, ik_mtx);
+		floor_nml.qv = MTX_calc_qvec(imtx, floor_nml.qv);
+		frx = atan2f(floor_nml.z, floor_nml.y);
+		frz = atan2f(-floor_nml.x, F_max(floor_nml.y, floor_nml.z));
+		frz *= pKC->foot_rz_factor;
+	}
+	pKC->foot_rx = UTL_smooth_chg(pKC->foot_rx, frx, 5);
+	pKC->foot_rz = UTL_smooth_chg(pKC->foot_rz, frz, 10);
+	if (pKC->foot_rx != 0.0f || pKC->foot_rz != 0.0f) {
+		MTX_rot_x(mx, pKC->foot_rx);
+		MTX_rot_z(my, pKC->foot_rz);
+		MTX_mul(ik_mtx, mx, my);
+		end_pos = V4_load(pKC->pJnt_end->mtx[3]);
+		MTX_mul(pKC->pJnt_end->mtx, ik_mtx, pKC->pJnt_end->mtx);
+		V4_store(pKC->pJnt_end->mtx[3], end_pos);
+	}
 }
 
 void ANM_calc_ik(ANIMATION* pAnm) {

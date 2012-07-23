@@ -32,9 +32,14 @@ typedef enum _E_ANMGRPTYPE {
 } E_ANMGRPTYPE;
 
 typedef enum _E_ANMSTATUS {
-	E_ANMSTATUS_LOOP = 1,
+	E_ANMSTATUS_LOOP  = 1,
 	E_ANMSTATUS_SHIFT = 2
 } E_ANMSTATUS;
+
+typedef enum _E_KCATTR {
+	E_KCATTR_FLOORADJ = 1,
+	E_KCATTR_FOOTROT  = 2
+} E_KCATTR;
 
 typedef struct _JOINT JOINT;
 typedef struct _MODEL MODEL;
@@ -50,11 +55,15 @@ typedef struct _ANM_DATA {
 } ANM_DATA;
 
 typedef struct _KIN_CHAIN {
-	UVEC  end_pos;
+	UVEC end_pos;
 	UVEC3 top_rot;
 	JOINT* pJnt_top;
 	JOINT* pJnt_rot;
 	JOINT* pJnt_end;
+	sys_ui32 attr; /* E_KCATTR */
+	float foot_rx;
+	float foot_rz;
+	float foot_rz_factor;
 } KIN_CHAIN;
 
 typedef struct _ANM_MOVE {
