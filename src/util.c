@@ -603,3 +603,8 @@ float UTL_frand_11() {
 	return (r + r);
 }
 
+float UTL_smooth_chg(float prev, float now, int len) {
+	float flen = (float)(len < 1 ? 1 : len);
+	return (prev*(flen-1.0f) + now) / flen;
+}
+

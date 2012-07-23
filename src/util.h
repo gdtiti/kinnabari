@@ -145,4 +145,4 @@ D_EXTERN_FUNC void* GMT_get_attr_val_pol(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInf
 
 D_EXTERN_FUNC float UTL_frand01(void);
 D_EXTERN_FUNC float UTL_frand_11(void);
-
+D_EXTERN_FUNC float UTL_smooth_chg(float prev, float now, int len);
