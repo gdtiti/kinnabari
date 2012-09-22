@@ -110,7 +110,13 @@ class Chan:
 		self.grp = grp
 		self.name = name
 		self.path = "/obj/"+grp.name+"/"+name
-		self.keyframes = hou.parm(self.path).keyframes()
+		parm = hou.parm(self.path)
+		trk = parm.overrideTrack()
+		if trk:
+			print "Override:", self.path,"->",trk.name()
+			self.keyframes = parm.getReferencedParm().keyframes()
+		else:
+			self.keyframes = parm.keyframes()
 		self.attr = getChAttr(name)
 		self.frmNoList = []
 		for k in self.keyframes:
