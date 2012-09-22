@@ -14,6 +14,10 @@ void main(RECV_PIX pix : TEXCOORD, out float4 c : COLOR) {
 	clip(cpos);
 	clip(1-cpos);
 
+	half3 n = (half3)normalize(half3(pix.wnrm.xyz));
+	float d = dot(n, (half3)-g_shadow_dir);
+	clip(d);
+
 	float shadow = Shadow(g_smp_shadow, pix.spos);
 	c.rgb = g_shadow_color.rgb;
 	c.rgb = Fog(c.rgb, pix.wpos.xyz, g_view_pos.xyz);
