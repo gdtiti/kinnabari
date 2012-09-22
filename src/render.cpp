@@ -2360,6 +2360,7 @@ static void Rdr_recv_prologue(RDR_LAYER* pLyr) {
 	pGP->shadow_proj[3].qv = V4_load(tm[3]);
 	pGP->shadow_color.qv = V4_set(0.1f, 0.1f, 0.0f, 0.8f);
 	pGP->shadow_param.qv = V4_set(1.0f/smap_size, smap_size, 1000.0f, 0.0f);
+	pGP->shadow_dir.qv = pRdr->mShadow_dir;
 }
 
 static void Rdr_exec_cc() {
