@@ -86,10 +86,11 @@ half3 SH_rev(float3 norm) {
 	half3 v2 = (n.x*n.x - n.y*n.y) * half3(g_SH[6].xyz);
 	half3 shc = v0 + v1 + v2;
 
+	half4 nrev = n*half4(-1.0, -1.0, -1.0, 1.0);
 	half3 v0_rev = half3(
-		dot(-n, g_SH[0]),
-		dot(-n, g_SH[1]),
-		dot(-n, g_SH[2])
+		dot(nrev, g_SH[0]),
+		dot(nrev, g_SH[1]),
+		dot(nrev, g_SH[2])
 	);
 	half3 shc_rev = v0_rev + v1 + v2;
 
