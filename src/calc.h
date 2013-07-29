@@ -75,7 +75,7 @@
 
 #define D_VEC128(_v) _mm_load_ps(_v)
 
-#if defined(__INTEL_COMPILER) || defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VEC >= 1500))
+#if defined(__INTEL_COMPILER) || defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER >= 1500))
 #	define D_M128I(_m) _mm_castps_si128(_m)
 #	define D_M128(_mi) _mm_castsi128_ps(_mi)
 #	define D_VEC_128I(_v) D_M128I(D_VEC128(_v))
