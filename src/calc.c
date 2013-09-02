@@ -2255,7 +2255,7 @@ int GEOM_seg_polyhedron_intersect(QVEC p0, QVEC p1, GEOM_PLANE* pPln, int n, QVE
 		float dnm = V4_dot4(pPln->qv, d);
 		float dist = pPln->d - V4_dot(pPln->qv, p0);
 		if (dnm == 0.0f) {
-			if (dist > 0.0f) goto _exit;
+			if (dist < 0.0f) goto _exit;
 		} else {
 			float t = dist / dnm;
 			if (dnm < 0.0f) {
