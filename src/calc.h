@@ -149,11 +149,6 @@ typedef struct _GEOM_OBB {
 	UVEC rad;
 } GEOM_OBB;
 
-typedef struct _GEOM_DOP8 {
-	UVEC min;
-	UVEC max;
-} GEOM_DOP8;
-
 typedef union _GEOM_SPHERE {
 	QVEC qv;
 	struct {float x, y, z, r;};
@@ -176,6 +171,11 @@ typedef struct _GEOM_FRUSTUM {
 } GEOM_FRUSTUM;
 
 D_EXTERN_DATA QMTX g_identity;
+
+D_EXTERN_DATA QVEC g_axis_qdop8[];
+D_EXTERN_DATA QVEC g_axis_qdop16[];
+D_EXTERN_DATA QVEC g_axis_qdop24[];
+D_EXTERN_DATA QVEC g_axis_qdop32[];
 
 #ifdef __cplusplus
 extern "C" {
@@ -320,9 +320,11 @@ QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);
 QVEC GEOM_tri_norm_cw(QVEC v0, QVEC v1, QVEC v2);
 QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2);
+QVEC GEOM_poly_norm(QVEC* pVtx, int nvtx);
 float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir);
 QVEC GEOM_seg_closest(QVEC pos, QVEC p0, QVEC p1);
 float GEOM_seg_dist2(GEOM_LINE* pSeg0, GEOM_LINE* pSeg1, GEOM_LINE* pBridge);
+void GEOM_sph_from_pts(GEOM_SPHERE* pSph, QVEC* pPnt, int npnt);
 int GEOM_sph_overlap(QVEC sph0, QVEC sph1);
 int GEOM_sph_cap_check(QVEC sph, QVEC pos0r, QVEC pos1);
 int GEOM_sph_aabb_check(QVEC sph, QVEC min, QVEC max);
@@ -330,6 +332,10 @@ int GEOM_sph_obb_check(QVEC sph, GEOM_OBB* pBox);
 int GEOM_cap_overlap(GEOM_CAPSULE* pCap0, GEOM_CAPSULE* pCap1);
 int GEOM_cap_obb_check(GEOM_CAPSULE* pCap, GEOM_OBB* pBox);
 void GEOM_aabb_init(GEOM_AABB* pBox);
+QVEC GEOM_aabb_center(GEOM_AABB* pBox);
+QVEC GEOM_aabb_size(GEOM_AABB* pBox);
+QVEC GEOM_aabb_extents(GEOM_AABB* pBox);
+float GEOM_aabb_bounding_radius(GEOM_AABB* pBox);
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld);
 void GEOM_aabb_from_frustum(GEOM_AABB* pBox, GEOM_FRUSTUM* pFst);
 int GEOM_aabb_overlap(GEOM_AABB* pBox0, GEOM_AABB* pBox1);
@@ -337,9 +343,13 @@ int GEOM_pnt_inside_aabb(QVEC pos, GEOM_AABB* pBox);
 void GEOM_obb_from_mtx(GEOM_OBB* pBox, MTX m);
 void GEOM_obb_from_frustum(GEOM_OBB* pBox, GEOM_FRUSTUM* pFst);
 int GEOM_obb_overlap(GEOM_OBB* pBox0, GEOM_OBB* pBox1);
-void GEOM_dop8_init(GEOM_DOP8* pDOP);
-void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos);
-int GEOM_dop8_overlap(GEOM_DOP8* pDOP0, GEOM_DOP8* pDOP1);
+int GEOM_qslab_overlap(QVEC* pMin0, QVEC* pMax0, QVEC* pMin1, QVEC* pMax1);
+
+/* QVEC-aligned kDOPs, k = 8, 16, 24, 32, 40 */
+void GEOM_qdop_init(QVEC* pMin, QVEC* pMax, int k);
+void GEOM_qdop_add_pnt(QVEC* pMin, QVEC* pMax, QVEC* pAxis, int k, QVEC pos);
+int GEOM_qdop_overlap(QVEC* pMin0, QVEC* pMax0, QVEC* pMin1, QVEC* pMax1, int k);
+
 float GEOM_tri_dist2(QVEC pos, QVEC* pVtx);
 float GEOM_quad_dist2(QVEC pos, QVEC* pVtx);
 int GEOM_seg_quad_intersect(QVEC p0, QVEC p1, QVEC* pVtx, QVEC* pHit_pos, QVEC* pHit_nml);
