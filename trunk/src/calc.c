@@ -28,6 +28,64 @@ QMTX g_identity = {
 	{0.0f, 0.0f, 0.0f, 1.0f}
 };
 
+
+QVEC g_axis_qdop8[] = {
+	{ 1.0f,  1.0f,  1.0f, 0.0f},
+	{ 1.0f,  1.0f, -1.0f, 0.0f},
+	{ 1.0f, -1.0f,  1.0f, 0.0f},
+	{-1.0f,  1.0f,  1.0f, 0.0f}
+};
+
+/* Non-standard kDOP orientations, see CollDet library for details. */
+QVEC g_axis_qdop16[] = {
+	{-0.229766f,  0.658153f, 0.716967f, 0.0f},
+	{-0.149665f, -0.135368f, 0.979426f, 0.0f},
+	{ 0.625910f, -0.315287f, 0.713324f, 0.0f},
+	{-0.668290f, -0.567624f, 0.480823f, 0.0f},
+
+	{ 0.634943f, -0.772500f,  0.009580f, 0.0f},
+	{-0.174663f, -0.983013f, -0.056370f, 0.0f},
+	{ 0.999587f, -0.015104f,  0.024464f, 0.0f},
+	{-0.593377f, -0.518221f, -0.615914f, 0.0f}
+};
+QVEC g_axis_qdop24[] = {
+	{ 0.467292f, -0.282501f,  0.837754f, 0.0f},
+	{-0.658340f, -0.367301f, -0.657023f, 0.0f},
+	{ 0.345076f, -0.811964f, -0.470784f, 0.0f},
+	{-0.118599f, -0.654947f,  0.746310f, 0.0f},
+
+	{-0.848737f,  0.328828f,  0.414147f, 0.0f},
+	{-0.985405f, -0.152079f, -0.076477f, 0.0f},
+	{ 0.694424f,  0.630548f, -0.346677f, 0.0f},
+	{-0.498724f, -0.078807f,  0.863171f, 0.0f},
+
+	{ 0.747654f, -0.629943f,  0.210203f, 0.0f},
+	{-0.411208f, -0.878038f, -0.244860f, 0.0f},
+	{-0.138434f,  0.974196f, -0.178266f, 0.0f},
+	{ 0.007929f,  0.401692f,  0.915741f, 0.0f}
+};
+QVEC g_axis_qdop32[] = {
+	{-0.152825f, -0.949488f, 0.274076f, 0.0f},
+	{ 0.431557f, -0.736597f, 0.520753f, 0.0f},
+	{-0.702401f, -0.696533f, 0.146542f, 0.0f},
+	{ 0.191478f,  0.355244f, 0.914952f, 0.0f},
+
+	{-0.695453f,  0.416248f,  0.585733f, 0.0f},
+	{-0.111614f, -0.606583f,  0.787146f, 0.0f},
+	{-0.842046f,  0.539402f, -0.002138f, 0.0f},
+	{-0.336534f, -0.887670f, -0.314303f, 0.0f},
+
+	{ 0.845726f, -0.176400f, 0.503618f, 0.0f},
+	{-0.365940f,  0.928485f, 0.063279f, 0.0f},
+	{-0.768371f, -0.198365f, 0.608488f, 0.0f},
+	{-0.180729f,  0.757084f, 0.627822f, 0.0f},
+
+	{ 0.371506f, -0.236306f,  0.897854f, 0.0f},
+	{ 0.997033f,  0.057166f, -0.051556f, 0.0f},
+	{ 0.806194f,  0.432823f,  0.403380f, 0.0f},
+	{-0.284310f, -0.037618f,  0.957994f, 0.0f}
+};
+
 static D_FORCE_INLINE void SinCos(float rad, float res[2]) {
 #if D_KISS || defined(_WIN64)
 	res[0] = sinf(rad);
@@ -412,11 +470,22 @@ QVEC V4_vdot(QVEC a, QVEC b) {
 }
 
 D_FORCE_INLINE float V4_dot(QVEC a, QVEC b) {
+#if D_KISS
 	UVEC v1;
 	UVEC v2;
 	v1.qv = a;
 	v2.qv = b;
 	return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
+#else
+	float res;
+	QVEC v = _mm_mul_ps(a, b);
+	__m128i iv = _mm_slli_si128(D_M128I(v), 4);
+	v = D_M128(iv);
+	v = _mm_hadd_ps(v, v);
+	v = _mm_hadd_ps(v, v);
+	_mm_store_ss(&res, v);
+	return res;
+#endif
 }
 
 float V4_dot4(QVEC a, QVEC b) {
@@ -508,8 +577,17 @@ QVEC V4_abs(QVEC v) {
 	for (i = 0; i < 4; ++i) {v0.f[i] = fabsf(v1.f[i]);}
 	return v0.qv;
 #else
+	/*
 	static D_DATA_ALIGN16(int abs_mask[4]) = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
 	return _mm_and_ps(v, _mm_load_ps((float*)abs_mask));
+	*/
+
+	/* return _mm_max_ps(v, _mm_sub_ps(_mm_setzero_ps(), v)); */
+
+	__m128i ti = D_M128I(v);
+	ti = _mm_slli_epi32(ti, 1);
+	ti = _mm_srli_epi32(ti, 1);
+	return D_M128(ti);
 #endif
 }
 
@@ -1721,6 +1799,25 @@ QVEC GEOM_tri_norm_ccw(QVEC v0, QVEC v1, QVEC v2) {
 	return V4_normalize(V4_cross(V4_sub(v1, v0), V4_sub(v2, v0)));
 }
 
+static QVEC Poly_norm_update(QVEC nrm, QVEC vi, QVEC vj) {
+	QVEC dv = V4_sub(vi, vj);
+	QVEC sv = V4_add(vi, vj);
+	QVEC nv = V4_mul(D_V4_SHUFFLE(dv, 1, 2, 0, 3), D_V4_SHUFFLE(sv, 2, 0, 1, 3));
+	return V4_add(nrm, nv);
+}
+
+QVEC GEOM_poly_norm(QVEC* pVtx, int nvtx) {
+	int i, j;
+	QVEC nrm = V4_zero();
+	for (i = 0; i < nvtx; ++i) {
+		j = i - 1;
+		if (j < 0) j = nvtx - 1;
+		nrm = Poly_norm_update(nrm, pVtx[i], pVtx[j]);
+	}
+	nrm = V4_normalize(nrm);
+	return nrm;
+}
+
 float GEOM_line_closest(QVEC pos, QVEC p0, QVEC p1, QVEC* pPnt, QVEC* pDir) {
 	QVEC dir = V4_set_w0(V4_sub(p1, p0));
 	QVEC vec = V4_sub(pos, p0);
@@ -1789,6 +1886,65 @@ float GEOM_seg_dist2(GEOM_LINE* pSeg0, GEOM_LINE* pSeg1, GEOM_LINE* pBridge) {
 		pBridge->pos1.qv = seg.pos1.qv;
 	}
 	return V4_dist2(seg.pos0.qv, seg.pos1.qv);
+}
+
+void GEOM_sph_from_pts(GEOM_SPHERE* pSph, QVEC* pPnt, int npnt) {
+	QVEC dv[3];
+	GEOM_AABB bbox;
+	QVEC center;
+	float radius, rad2;
+	int i, j;
+	int imin[3] = {0, 0, 0};
+	int imax[3] = {0, 0, 0};
+	float d2x, d2y, d2z;
+	int min_idx, max_idx;
+
+	if (!pSph) return;
+	if (!pPnt || npnt <= 0) {
+		pSph->qv = V4_zero();
+		return;
+	}
+
+	for (i = 1; i < npnt; ++i) {
+		for (j = 0; j < 3; ++j) {
+			if (V4_at(pPnt[i], j) < V4_at(pPnt[imin[j]], j)) imin[j] = i;
+			if (V4_at(pPnt[i], j) > V4_at(pPnt[imax[j]], j)) imax[j] = i;
+		}
+	}
+	for (i = 0; i < 3; ++i) {
+		dv[i] = V4_sub(pPnt[imax[i]], pPnt[imin[i]]);
+	}
+	d2x = V4_mag2(dv[0]);
+	d2y = V4_mag2(dv[1]);
+	d2z = V4_mag2(dv[2]);
+	min_idx = imin[0];
+	max_idx = imax[0];
+	if (d2y > d2x && d2y > d2z) {
+		min_idx = imin[1];
+		max_idx = imax[1];
+	}
+	if (d2z > d2x && d2z > d2y) {
+		min_idx = imin[2];
+		max_idx = imax[2];
+	}
+	bbox.min.qv = pPnt[min_idx];
+	bbox.max.qv = pPnt[max_idx];
+	center = GEOM_aabb_center(&bbox);
+	radius = GEOM_aabb_bounding_radius(&bbox);
+	rad2 = D_SQ(radius);
+	for (i = 1; i < npnt; ++i) {
+		QVEC v = V4_sub(pPnt[i], center);
+		float dist2 = V4_mag2(v);
+		if (dist2 > rad2) {
+			float dist = sqrtf(dist2);
+			float r = (radius + dist) * 0.5f;
+			float s = (r - radius) / dist;
+			radius = r;
+			center = V4_add(center, V4_scale(v, s));
+		}
+	}
+	pSph->qv = center;
+	pSph->r = radius;
 }
 
 int GEOM_sph_overlap(QVEC sph0, QVEC sph1) {
@@ -1870,6 +2026,22 @@ int GEOM_cap_obb_check(GEOM_CAPSULE* pCap, GEOM_OBB* pBox) {
 void GEOM_aabb_init(GEOM_AABB* pBox) {
 	pBox->min.qv = V4_set_pnt(D_MAX_FLOAT, D_MAX_FLOAT, D_MAX_FLOAT);
 	pBox->max.qv = V4_set_pnt(-D_MAX_FLOAT, -D_MAX_FLOAT, -D_MAX_FLOAT);
+}
+
+QVEC GEOM_aabb_center(GEOM_AABB* pBox) {
+	return V4_scale(V4_add(pBox->min.qv, pBox->max.qv), 0.5f);
+}
+
+QVEC GEOM_aabb_size(GEOM_AABB* pBox) {
+	return V4_sub(pBox->max.qv, pBox->min.qv);
+}
+
+QVEC GEOM_aabb_extents(GEOM_AABB* pBox) {
+	return V4_scale(GEOM_aabb_size(pBox), 0.5f);
+}
+
+float GEOM_aabb_bounding_radius(GEOM_AABB* pBox) {
+	return V4_mag(GEOM_aabb_extents(pBox));
 }
 
 void GEOM_aabb_transform(GEOM_AABB* pNew, MTX m, GEOM_AABB* pOld) {
@@ -2068,35 +2240,60 @@ int GEOM_obb_overlap(GEOM_OBB* pBox0, GEOM_OBB* pBox1) {
 	return 1;
 }
 
-void GEOM_dop8_init(GEOM_DOP8* pDOP) {
-	pDOP->min.qv = V4_fill(D_MAX_FLOAT);
-	pDOP->max.qv = V4_fill(-D_MAX_FLOAT);
-}
-
-void GEOM_dop8_add_pnt(GEOM_DOP8* pDOP, QVEC pos) {
-	static QVEC axis[4] = {
-		{ 1.0f,  1.0f,  1.0f, 0.0f},
-		{ 1.0f,  1.0f, -1.0f, 0.0f},
-		{ 1.0f, -1.0f,  1.0f, 0.0f},
-		{-1.0f,  1.0f,  1.0f, 0.0f}
-	};
-	QVEC v;
-	v = V4_set(V4_dot4(pos, axis[0]), V4_dot4(pos, axis[1]), V4_dot4(pos, axis[2]), V4_dot4(pos, axis[3]));
-	pDOP->min.qv = V4_min(pDOP->min.qv, v);
-	pDOP->max.qv = V4_max(pDOP->max.qv, v);
-}
-
-int GEOM_dop8_overlap(GEOM_DOP8* pDOP0, GEOM_DOP8* pDOP1) {
+int GEOM_qslab_overlap(QVEC* pMin0, QVEC* pMax0, QVEC* pMin1, QVEC* pMax1) {
 #if D_KISS
-	if (pDOP0->min.x > pDOP1->max.x || pDOP0->max.x < pDOP1->min.x) return 0;
-	if (pDOP0->min.y > pDOP1->max.y || pDOP0->max.y < pDOP1->min.y) return 0;
-	if (pDOP0->min.z > pDOP1->max.z || pDOP0->max.z < pDOP1->min.z) return 0;
-	if (pDOP0->min.w > pDOP1->max.w || pDOP0->max.w < pDOP1->min.w) return 0;
+	UVEC s0min;
+	UVEC s0max;
+	UVEC s1min;
+	UVEC s1max;
+	s0min.qv = *pMin0;
+	s0max.qv = *pMax0;
+	s1min.qv = *pMin1;
+	s1max.qv = *pMax1;
+	if (s0min.x > s1max.x || s0max.x < s1min.x) return 0;
+	if (s0min.y > s1max.y || s0max.y < s1min.y) return 0;
+	if (s0min.z > s1max.z || s0max.z < s1min.z) return 0;
+	if (s0min.w > s1max.w || s0max.w < s1min.w) return 0;
 	return 1;
 #else
-	int m = _mm_movemask_ps(_mm_and_ps(_mm_cmple_ps(pDOP0->min.qv, pDOP1->max.qv), _mm_cmpnlt_ps(pDOP0->max.qv, pDOP1->min.qv)));
+	QVEC min0 = *pMin0;
+	QVEC max0 = *pMax0;
+	QVEC min1 = *pMin1;
+	QVEC max1 = *pMax1;
+	int m = _mm_movemask_ps(_mm_and_ps(_mm_cmple_ps(min0, max1), _mm_cmpnlt_ps(max0, min1)));
 	return ((m & 0xF) == 0xF);
 #endif
+}
+
+void GEOM_qdop_init(QVEC* pMin, QVEC* pMax, int k) {
+	int i;
+	for (i = 0; i < k/8; ++i) {
+		pMin[i] = V4_fill(D_MAX_FLOAT);
+		pMax[i] = V4_fill(-D_MAX_FLOAT);
+	}
+}
+
+void GEOM_qdop_add_pnt(QVEC* pMin, QVEC* pMax, QVEC* pAxis, int k, QVEC pos) {
+	int i;
+	for (i = 0; i < k/8; ++i) {
+		float dx = V4_dot(pos, pAxis[i*4 + 0]);
+		float dy = V4_dot(pos, pAxis[i*4 + 1]);
+		float dz = V4_dot(pos, pAxis[i*4 + 2]);
+		float dw = V4_dot(pos, pAxis[i*4 + 3]);
+		QVEC vprj = V4_set(dx, dy, dz, dw);
+		pMin[i] = V4_min(pMin[i], vprj);
+		pMax[i] = V4_max(pMax[i], vprj);
+	}
+}
+
+int GEOM_qdop_overlap(QVEC* pMin0, QVEC* pMax0, QVEC* pMin1, QVEC* pMax1, int k) {
+	int i;
+	for (i = 0; i < k/8; ++i) {
+		if (!GEOM_qslab_overlap(&pMin0[i], &pMax0[i], &pMin1[i], &pMax1[i])) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 float GEOM_tri_dist2(QVEC pos, QVEC* pVtx) {

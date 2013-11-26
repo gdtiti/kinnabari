@@ -95,11 +95,6 @@ void CAM_apply(CAMERA* pCam) {
 	pView->pos.qv = V4_set_w1(pCam->pos.qv);
 }
 
-D_FORCE_INLINE static int Cam_cull_box_ck(QVEC vec, QVEC rvec, QVEC nrm) {
-	QVEC na = V4_abs(nrm);
-	return (V4_dot(rvec, na) < V4_dot(vec, nrm));
-}
-
 int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox) {
 	return GEOM_frustum_aabb_cull(&pCam->frustum, pBox);
 }
