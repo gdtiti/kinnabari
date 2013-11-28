@@ -185,8 +185,6 @@ typedef struct _RDR_VTX_SCREEN {
 	float       tex[4];
 } RDR_VTX_SCREEN;
 
-typedef void* RDR_HANDLE;
-
 typedef union _RDR_LOCKED_VTX {
 	void*            pData;
 	RDR_VTX_GENERAL* pGen;
@@ -200,7 +198,7 @@ typedef struct _RDR_VTX_BUFFER {
 	sys_byte       attr; /* E_RDR_RSRCATTR */
 	sys_ui16       vtx_size;
 	sys_ui32       nb_vtx;
-	RDR_HANDLE     handle;
+	sys_handle     handle;
 	RDR_LOCKED_VTX locked;
 } RDR_VTX_BUFFER;
 
@@ -209,21 +207,21 @@ typedef struct _RDR_IDX_BUFFER {
 	sys_byte   attr; /* E_RDR_RSRCATTR */
 	sys_ui16   reserved;
 	sys_ui32   nb_idx;
-	RDR_HANDLE handle;
+	sys_handle handle;
 	void*     pData;
 } RDR_IDX_BUFFER;
 
 typedef struct _RDR_TARGET {
-	RDR_HANDLE hTgt;
-	RDR_HANDLE hDepth;
-	RDR_HANDLE hTgt_surf;
-	RDR_HANDLE hDepth_surf;
+	sys_handle hTgt;
+	sys_handle hDepth;
+	sys_handle hTgt_surf;
+	sys_handle hDepth_surf;
 	sys_ui16   w;
 	sys_ui16   h;
 } RDR_TARGET;
 
 typedef struct _RDR_TEXTURE {
-	RDR_HANDLE handle;
+	sys_handle handle;
 	sys_ui16   w;
 	sys_ui16   h;
 	sys_ui16   d;
@@ -232,7 +230,7 @@ typedef struct _RDR_TEXTURE {
 } RDR_TEXTURE;
 
 typedef struct _RDR_SAMPLER {
-	RDR_HANDLE  hTex;
+	sys_handle  hTex;
 	RDR_COLOR32 border;
 	float       mip_bias;
 /*  bits  */
@@ -316,7 +314,7 @@ typedef struct _RDR_PROG_INFO {
 } RDR_PROG_INFO;
 
 typedef struct _RDR_PROG {
-	RDR_HANDLE     handle;
+	sys_handle     handle;
 	RDR_PROG_INFO* pInfo;
 } RDR_PROG;
 

@@ -140,7 +140,7 @@ typedef sys_i32 sys_intptr;
 # endif
 #endif
 
-typedef sys_intptr sys_handle;
+typedef void* sys_handle;
 
 typedef enum _E_KEY {
 	E_KEY_LEFT   = (1<<0),

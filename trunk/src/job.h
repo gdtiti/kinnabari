@@ -20,13 +20,12 @@
 
 #define D_MAX_WORKERS (8)
 
-typedef void* JOB_HANDLE;
 
 typedef struct _JOB_WORKER {
-	JOB_HANDLE thandle;
+	sys_handle thandle;
 	sys_ui32   tid;
-	JOB_HANDLE exec_sig;
-	JOB_HANDLE done_sig;
+	sys_handle exec_sig;
+	sys_handle done_sig;
 	sys_int    exec_count;
 	sys_int    id;
 	sys_int    end_flg;
