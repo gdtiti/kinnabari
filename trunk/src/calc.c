@@ -591,6 +591,19 @@ QVEC V4_abs(QVEC v) {
 #endif
 }
 
+QVEC V4_neg(QVEC v) {
+#if D_KISS
+	UVEC v0;
+	UVEC v1;
+	int i;
+	v1.qv = v;
+	for (i = 0; i < 4; ++i) {v0.f[i] = -v1.f[i];}
+	return v0.qv;
+#else
+	return _mm_sub_ps(_mm_setzero_ps(), v);
+#endif
+}
+
 QVEC V4_inv(QVEC v) {
 #if D_KISS
 	UVEC v0;
@@ -1196,6 +1209,14 @@ QVEC MTX_get_rot_xyz(MTX m) {
 		rz = -atan2f(-m[0][1], m[0][0]);
 	}
 	return V4_set_vec(rx, ry, rz);
+}
+
+QVEC MTX_get_row(MTX m, int idx) {
+	return *((QVEC*)&m[idx]);
+}
+
+void MTX_set_row(MTX m, int idx, QVEC v) {
+	*((QVEC*)&m[idx]) = v;
 }
 
 

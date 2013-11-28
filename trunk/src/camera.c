@@ -72,6 +72,20 @@ void CAM_set_view(CAMERA* pCam, QVEC pos, QVEC tgt, QVEC up) {
 	pCam->up.qv = V4_normalize(V4_set_w0(up));
 }
 
+void CAM_set_hou_view(CAMERA* pCam, QMTX* pHMtx, float zdist) {
+	QVEC pos;
+	QVEC tgt;
+	QVEC up;
+	QVEC dir = V4_set(0.0f, 0.0f, zdist, 1.0f);
+	QMTX m;
+	MTX_cpy(m, *pHMtx);
+	MTX_set_row(m, 2, V4_neg(MTX_get_row(m, 2)));
+	pos = MTX_get_row(m, 3);
+	tgt = MTX_calc_qpnt(m, dir);
+	up = MTX_get_row(m, 1);
+	CAM_set_view(pCam, pos, tgt, up);
+}
+
 static void Cam_update_frustum(CAMERA* pCam) {
 	GEOM_frustum_init(&pCam->frustum, pCam->mtx_view_i, pCam->fovy, pCam->aspect, pCam->znear, pCam->zfar);
 }

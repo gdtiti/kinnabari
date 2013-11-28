@@ -234,6 +234,7 @@ QVEC V4_saturate(QVEC v);
 QVEC V4_min(QVEC a, QVEC b);
 QVEC V4_max(QVEC a, QVEC b);
 QVEC V4_abs(QVEC v);
+QVEC V4_neg(QVEC v);
 QVEC V4_inv(QVEC v);
 QVEC V4_rcp(QVEC v);
 QVEC V4_sqrt(QVEC v);
@@ -269,6 +270,8 @@ QVEC MTX_calc_qvec(MTX m, QVEC v);
 QVEC MTX_calc_qpnt(MTX m, QVEC v);
 QVEC MTX_apply(MTX m, QVEC v);
 QVEC MTX_get_rot_xyz(MTX m);
+QVEC MTX_get_row(MTX m, int idx);
+void MTX_set_row(MTX m, int idx, QVEC v);
 
 QVEC QUAT_from_axis_angle(QVEC axis, float ang);
 QVEC QUAT_from_mtx(MTX m);
