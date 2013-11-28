@@ -85,6 +85,7 @@ D_EXTERN_FUNC void CAM_set_zoom(CAMERA* pCam, float focal, float aperture);
 D_EXTERN_FUNC void CAM_set_fovy(CAMERA* pCam, float fovy);
 D_EXTERN_FUNC void CAM_set_z_planes(CAMERA* pCam, float znear, float zfar);
 D_EXTERN_FUNC void CAM_set_view(CAMERA* pCam, QVEC pos, QVEC tgt, QVEC up);
+D_EXTERN_FUNC void CAM_set_hou_view(CAMERA* pCam, QMTX* pHMtx, float zdist);
 D_EXTERN_FUNC void CAM_update(CAMERA* pCam);
 D_EXTERN_FUNC void CAM_apply(CAMERA* pCam);
 D_EXTERN_FUNC int CAM_cull_box(CAMERA* pCam, GEOM_AABB* pBox);
