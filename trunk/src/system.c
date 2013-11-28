@@ -19,7 +19,11 @@
  */
 
 #define WIN32_LEAN_AND_MEAN 1
+#define NOMINMAX
+#define _WIN32_WINNT 0x0500
 #include <windows.h>
+#include <tchar.h>
+#include <psapi.h>
 
 #include "system.h"
 
@@ -198,3 +202,212 @@ void SYS_init_FPU() {
 #	endif
 #endif
 }
+
+static void Con_attach() {
+#if defined(_WIN64)
+	AttachConsole(GetCurrentProcessId());
+#else
+	BOOL (WINAPI *fnAttachConsole)(DWORD pid) = 0;
+	FARPROC* pProc = (FARPROC*)&fnAttachConsole;
+	*pProc = GetProcAddress(GetModuleHandle(_T("kernel32.dll")), "AttachConsole");
+	if (fnAttachConsole) {
+		fnAttachConsole(GetCurrentProcessId());
+	}
+#endif
+}
+
+void SYS_con_init() {
+	FILE* pConFile;
+	AllocConsole();
+	Con_attach();
+	freopen_s(&pConFile, "CON", "w", stdout);
+	freopen_s(&pConFile, "CON", "w", stderr);
+}
+
+void SYS_mutex_init(SYS_MUTEX* pMut) {
+	InitializeCriticalSection((CRITICAL_SECTION*)pMut->cs);
+}
+
+void SYS_mutex_reset(SYS_MUTEX* pMut) {
+	DeleteCriticalSection((CRITICAL_SECTION*)pMut->cs);
+}
+
+void SYS_mutex_enter(SYS_MUTEX* pMut) {
+	EnterCriticalSection((CRITICAL_SECTION*)pMut->cs);
+}
+
+void SYS_mutex_leave(SYS_MUTEX* pMut) {
+	LeaveCriticalSection((CRITICAL_SECTION*)pMut->cs);
+}
+
+int SYS_adjust_privileges() {
+	BOOL b;
+	LUID luid;
+	HANDLE tok;
+	DWORD len;
+	TOKEN_PRIVILEGES priv;
+	TOKEN_PRIVILEGES priv_old;
+
+	b = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok);
+	if (!b) return 0;
+	b = LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid);
+	if (!b) {
+		CloseHandle(tok);
+		return 0;
+	}
+
+	ZeroMemory(&priv, sizeof(TOKEN_PRIVILEGES));
+	priv.PrivilegeCount = 1;
+	priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	priv.Privileges[0].Luid = luid;
+	len = sizeof(TOKEN_PRIVILEGES);
+	b = AdjustTokenPrivileges(tok, FALSE, &priv, sizeof(TOKEN_PRIVILEGES), &priv_old, &len);
+	CloseHandle(tok);
+	return !!b;
+}
+
+static DWORD W32_get_pid(LPTSTR exe_name) {
+	DWORD list[256];
+	DWORD nbytes;
+	if (EnumProcesses(list, sizeof(list), &nbytes)) {
+		int i;
+		TCHAR name[1024];
+		HANDLE hproc;
+		int nproc = nbytes / sizeof(DWORD);
+
+		for (i = 0; i < nproc; ++i) {
+			hproc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, list[i]);
+			if (hproc) {
+				TCHAR* pTail;
+				GetProcessImageFileName(hproc, name, sizeof(name)/sizeof(TCHAR));
+				CloseHandle(hproc);
+				pTail = name;
+				while (1) {
+					if (*pTail == 0) {
+						break;
+					}
+					++pTail;
+				}
+				if (pTail == name) continue;
+				while (1) {
+					if (*pTail == '\\') {
+						++pTail;
+						break;
+					}
+					--pTail;
+					if (pTail == name) break;
+				}
+				if (0 == _tcscmp(pTail, exe_name)) {
+					return list[i];
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+sys_ui32 SYS_pid_get(const char* name) {
+	int i;
+	TCHAR tname[1024];
+	sys_ui32 pid = (sys_ui32)-1;
+	int n = (int)strlen(name);
+	for (i = 0; i < n; ++i) {
+		tname[i] = name[i];
+	}
+	tname[n] = 0;
+	pid = W32_get_pid(tname);
+	return pid;
+}
+
+int SYS_pid_ck(sys_ui32 pid) {
+	return pid != (sys_ui32)-1;
+}
+
+sys_handle SYS_proc_open(sys_ui32 pid) {
+	HANDLE hnd = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	return (sys_handle)hnd;
+}
+
+void SYS_proc_close(sys_handle hnd) {
+	CloseHandle((HANDLE)hnd);
+}
+
+sys_ui32 SYS_proc_read(sys_handle hnd, sys_ui64 addr, void* pDst, int size) {
+	MEMORY_BASIC_INFORMATION mi;
+	SIZE_T nread = 0;
+	union {void* p; sys_ui64 a;} ptr;
+	size_t offs;
+	HANDLE hproc = (HANDLE)hnd;
+
+	ptr.p = NULL;
+	ptr.a = addr;
+	VirtualQueryEx(hproc, ptr.p, &mi, sizeof(MEMORY_BASIC_INFORMATION));
+	offs = (char*)ptr.p - (char*)mi.BaseAddress;
+	ReadProcessMemory(hproc, (char*)mi.BaseAddress + offs, pDst, size, &nread);
+	return (sys_ui32)nread;
+}
+
+sys_ui32 SYS_proc_write(sys_handle hnd, sys_ui64 addr, void* pSrc, int size) {
+	size_t offs;
+	DWORD res;
+	SIZE_T written = 0;
+	MEMORY_BASIC_INFORMATION mi;
+	union {void* p; sys_ui64 a;} ptr;
+	HANDLE hproc = (HANDLE)hnd;
+
+	ptr.a = addr;
+	VirtualQueryEx(hproc, ptr.p, &mi, sizeof(MEMORY_BASIC_INFORMATION));
+	offs = (char*)ptr.p - (char*)mi.BaseAddress;
+	res = WriteProcessMemory(hproc, (char*)mi.BaseAddress + offs, pSrc, size, &written);
+	return (sys_ui32)written;
+}
+
+void SYS_proc_call(sys_handle hnd, void* pCode, void* pData) {
+	HANDLE hproc = (HANDLE)hnd;
+	HANDLE thandle;
+	DWORD tid;
+	thandle = CreateRemoteThread(hproc, NULL, 0, (LPTHREAD_START_ROUTINE)pCode, pData, CREATE_SUSPENDED, &tid);
+	if (thandle) {
+		ResumeThread(thandle);
+		WaitForSingleObject(thandle, INFINITE);
+		CloseHandle(thandle);
+	}
+}
+
+int SYS_proc_active(sys_handle hnd) {
+	HANDLE hproc = (HANDLE)hnd;
+	DWORD code;
+	if (GetExitCodeProcess(hproc, &code)) {
+		return STILL_ACTIVE == code;
+	}
+	return 0;
+}
+
+sys_handle SYS_shared_mem_create(sys_ui32 size) {
+	HANDLE hnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, NULL);
+	return (sys_handle)hnd;
+}
+
+void SYS_shared_mem_destroy(sys_handle hnd) {
+	CloseHandle((HANDLE)hnd);
+}
+
+sys_handle SYS_shared_mem_open(sys_handle hMem, sys_handle hProc) {
+	sys_handle h = 0;
+	HANDLE hTgt;
+	if (DuplicateHandle(GetCurrentProcess(), (HANDLE)hMem, (HANDLE)hProc, &hTgt, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+		h = (sys_handle)hTgt;
+	}
+	return h;
+}
+
+void* SYS_shared_mem_map(sys_handle hMem) {
+	void* p = NULL;
+	p = MapViewOfFileEx((HANDLE)hMem, FILE_MAP_WRITE, 0, 0, 0, NULL);
+	return p;
+}
+
+void SYS_shared_mem_unmap(void* p) {
+	UnmapViewOfFile(p);
+}
+
