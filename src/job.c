@@ -152,7 +152,7 @@ void JOB_schedule(JOB_QUEUE* pQue, sys_int nb_wrk) {
 	JOB_WORKER* pWrk;
 	JOB_SYS* pSys = &g_job_sys;
 	JOB_SCHEDULER* pSdl = &pSys->scheduler;
-	JOB_HANDLE hlist[D_MAX_WORKERS];
+	sys_handle hlist[D_MAX_WORKERS];
 
 	pSdl->pQue = pQue;
 	pWrk = &pSdl->worker[0];
