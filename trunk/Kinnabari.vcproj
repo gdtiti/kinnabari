@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\dxguid.lib&quot; &quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\d3d9.lib&quot;"
+				AdditionalDependencies="&quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\dxguid.lib&quot; &quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\d3d9.lib&quot; psapi.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="&quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\dxguid.lib&quot; &quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\d3d9.lib&quot;"
+				AdditionalDependencies="&quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\dxguid.lib&quot; &quot;$(ProgramFiles)\Microsoft DirectX SDK (June 2010)\Lib\x86\d3d9.lib&quot; psapi.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
