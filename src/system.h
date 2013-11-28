@@ -133,8 +133,14 @@ typedef unsigned long sys_ulong;
 #ifdef _INTPTR_T_DEFINED
 typedef intptr_t sys_intptr;
 #else
+# if defined(_WIN64)
+typedef sys_i64 sys_intptr;
+# else
 typedef sys_i32 sys_intptr;
+# endif
 #endif
+
+typedef sys_intptr sys_handle;
 
 typedef enum _E_KEY {
 	E_KEY_LEFT   = (1<<0),
@@ -152,6 +158,14 @@ typedef struct _INPUT_STATE {
 
 D_EXTERN_DATA INPUT_STATE g_input;
 
+typedef struct _SYS_MUTEX {
+#if defined(_WIN64)
+	sys_ui8 cs[0x28];
+#else
+	sys_ui8 cs[0x18];
+#endif
+} SYS_MUTEX;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -164,6 +178,25 @@ void* SYS_load(const char* fname);
 void SYS_get_input(void);
 sys_i64 SYS_get_timestamp(void);
 void SYS_init_FPU(void);
+void SYS_con_init(void);
+void SYS_mutex_init(SYS_MUTEX* pMut);
+void SYS_mutex_reset(SYS_MUTEX* pMut);
+void SYS_mutex_enter(SYS_MUTEX* pMut);
+void SYS_mutex_leave(SYS_MUTEX* pMut);
+int SYS_adjust_privileges(void);
+sys_ui32 SYS_pid_get(const char* name);
+int SYS_pid_ck(sys_ui32 pid);
+sys_handle SYS_proc_open(sys_ui32 pid);
+void SYS_proc_close(sys_handle hnd);
+sys_ui32 SYS_proc_read(sys_handle hnd, sys_ui64 addr, void* pDst, int size);
+sys_ui32 SYS_proc_write(sys_handle hnd, sys_ui64 addr, void* pSrc, int size);
+void SYS_proc_call(sys_handle hnd, void* pCode, void* pData);
+int SYS_proc_active(sys_handle hnd);
+sys_handle SYS_shared_mem_create(sys_ui32 size);
+void SYS_shared_mem_destroy(sys_handle hnd);
+sys_handle SYS_shared_mem_open(sys_handle hMem, sys_handle hProc);
+void* SYS_shared_mem_map(sys_handle hMem);
+void SYS_shared_mem_unmap(void* p);
 
 #ifdef __cplusplus
 }
