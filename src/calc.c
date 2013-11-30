@@ -234,7 +234,7 @@ void V4_store(float* p, QVEC v) {
 	v0.qv = v;
 	for (i = 0; i < 4; ++i) *p++ = v0.f[i];
 #else
-	_mm_store_ps(p, v);
+	_mm_storeu_ps(p, v);
 #endif
 }
 
@@ -295,7 +295,7 @@ QVEC V4_load(float* p) {
 	for (i = 0; i < 4; ++i) v0.f[i] = *p++;
 	return v0.qv;
 #else
-	return _mm_load_ps(p);
+	return _mm_loadu_ps(p);
 #endif
 }
 
@@ -721,6 +721,67 @@ void MTX_clear(MTX m) {
 
 void MTX_unit(MTX m) {
 	MTX_cpy(m, g_identity);
+}
+
+void MTX_load(MTX m, float* p) {
+#if D_KISS
+	int i, j;
+	for (i = 0; i < 4; ++i) {
+		for (j = 0; j < 4; ++j) {
+			m[i][j] = *p++;
+		}
+	}
+#else
+	QVEC* pV = (QVEC*)m;
+	pV[0] = _mm_loadu_ps(p);
+	pV[1] = _mm_loadu_ps(p + 4);
+	pV[2] = _mm_loadu_ps(p + 8);
+	pV[3] = _mm_loadu_ps(p + 12);
+#endif
+}
+
+void MTX_load64(MTX m, double* p) {
+#if D_KISS
+	int i, j;
+	for (i = 0; i < 4; ++i) {
+		for (j = 0; j < 4; ++j) {
+			m[i][j] = (float)*p++;
+		}
+	}
+#else
+	__m128d t0;
+	__m128d t1;
+	QVEC* pV = (QVEC*)m;
+	t0 = _mm_loadu_pd(p + 0x0);
+	t1 = _mm_loadu_pd(p + 0x2);
+	pV[0] = D_V4_MIX(_mm_cvtpd_ps(t0), _mm_cvtpd_ps(t1), 0, 1, 0, 1);
+	t0 = _mm_loadu_pd(p + 0x4);
+	t1 = _mm_loadu_pd(p + 0x6);
+	pV[1] = D_V4_MIX(_mm_cvtpd_ps(t0), _mm_cvtpd_ps(t1), 0, 1, 0, 1);
+	t0 = _mm_loadu_pd(p + 0x8);
+	t1 = _mm_loadu_pd(p + 0xA);
+	pV[2] = D_V4_MIX(_mm_cvtpd_ps(t0), _mm_cvtpd_ps(t1), 0, 1, 0, 1);
+	t0 = _mm_loadu_pd(p + 0xC);
+	t1 = _mm_loadu_pd(p + 0xE);
+	pV[3] = D_V4_MIX(_mm_cvtpd_ps(t0), _mm_cvtpd_ps(t1), 0, 1, 0, 1);
+#endif
+}
+
+void MTX_store(MTX m, float* p) {
+#if D_KISS
+	int i, j;
+	for (i = 0; i < 4; ++i) {
+		for (j = 0; j < 4; ++j) {
+			*p++ = m[i][j];
+		}
+	}
+#else
+	QVEC* pV = (QVEC*)m;
+	_mm_storeu_ps(p, pV[0]);
+	_mm_storeu_ps(p + 4, pV[1]);
+	_mm_storeu_ps(p + 8, pV[2]);
+	_mm_storeu_ps(p + 12, pV[3]);
+#endif
 }
 
 void MTX_transpose(MTX m0, MTX m1) {

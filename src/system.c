@@ -411,3 +411,59 @@ void SYS_shared_mem_unmap(void* p) {
 	UnmapViewOfFile(p);
 }
 
+void SYS_remote_init(sys_handle hWnd, SYS_ADDR addr) {
+	if (IsWindow(hWnd)) {
+		SetWindowLong(hWnd, 0, addr.low);
+		SetWindowLong(hWnd, 4, addr.high);
+	}
+}
+
+typedef struct _W32_REMOTE_WND_WK {
+	DWORD pid;
+	HWND hWnd;
+	TCHAR* pClass_name;
+} W32_REMOTE_WND_WK;
+
+static BOOL CALLBACK W32_remote_wnd_enum(HWND hwnd, LPARAM lparam) {
+	DWORD pid;
+	TCHAR cname[64];
+	W32_REMOTE_WND_WK* pWk = (W32_REMOTE_WND_WK*)lparam;
+	GetWindowThreadProcessId(hwnd, &pid);
+	if (pid == pWk->pid) {
+		memset(cname, 0, sizeof(cname));
+		GetClassName(hwnd, cname, D_ARRAY_LENGTH(cname));
+		if (0 == _tcscmp(cname, pWk->pClass_name)) {
+			pWk->hWnd = hwnd;
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+int SYS_remote_handshake(const char* proc_name, const char* class_name, SYS_REMOTE_INFO* pInfo) {
+	int res = 0;
+	sys_ui32 pid = SYS_pid_get(proc_name);
+	if (SYS_pid_ck(pid)) {
+		int i, n;
+		TCHAR cname[64];
+		W32_REMOTE_WND_WK wk;
+		memset(cname, 0, sizeof(cname));
+		n = (int)strlen(class_name);
+		for (i = 0; i < n; ++i) {
+			cname[i] = class_name[i];
+		}
+		wk.pid = pid;
+		wk.hWnd = 0;
+		wk.pClass_name = cname;
+		EnumWindows(W32_remote_wnd_enum, (LPARAM)&wk);
+		if (wk.hWnd) {
+			HWND h = wk.hWnd;
+			pInfo->addr.low = GetWindowLong(h, 0);
+			pInfo->addr.high = GetWindowLong(h, 4);
+			pInfo->pid = pid;
+			res = 1;
+		}
+	}
+	return res;
+}
+
