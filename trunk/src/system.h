@@ -158,6 +158,15 @@ typedef struct _INPUT_STATE {
 
 D_EXTERN_DATA INPUT_STATE g_input;
 
+typedef union _SYS_ADDR {
+	sys_ui64 addr64;
+	void* ptr;
+	struct {
+		sys_ui32 low;
+		sys_ui32 high;
+	};
+} SYS_ADDR;
+
 typedef struct _SYS_MUTEX {
 #if defined(_WIN64)
 	sys_ui8 cs[0x28];
@@ -165,6 +174,16 @@ typedef struct _SYS_MUTEX {
 	sys_ui8 cs[0x18];
 #endif
 } SYS_MUTEX;
+
+typedef struct _SYS_REMOTE_INFO {
+	SYS_ADDR addr;
+	sys_ui32 pid;
+} SYS_REMOTE_INFO;
+
+typedef struct _SYS_REMOTE_GATEWAY {
+	SYS_ADDR code;
+	SYS_ADDR data;
+} SYS_REMOTE_GATEWAY;
 
 #ifdef __cplusplus
 extern "C" {
@@ -197,6 +216,8 @@ void SYS_shared_mem_destroy(sys_handle hnd);
 sys_handle SYS_shared_mem_open(sys_handle hMem, sys_handle hProc);
 void* SYS_shared_mem_map(sys_handle hMem);
 void SYS_shared_mem_unmap(void* p);
+void SYS_remote_init(sys_handle hWnd, SYS_ADDR addr);
+int SYS_remote_handshake(const char* proc_name, const char* class_name, SYS_REMOTE_INFO* pInfo);
 
 #ifdef __cplusplus
 }

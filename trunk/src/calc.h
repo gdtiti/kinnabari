@@ -88,8 +88,10 @@
 
 #if D_KISS
 #	define D_V4_SHUFFLE(_v, _ix, _iy, _iz, _iw) V4_set(V4_at(_v, _ix), V4_at(_v, _iy), V4_at(_v, _iz), V4_at(_v, _iw))
+#	define D_V4_MIX(_v0, _v1, _ix0, _iy0, _iz1, _iw1) V4_set(V4_at(_v0, _ix0), V4_at(_v0, _iy0), V4_at(_v1, _iz1), V4_at(_v1, _iw1))
 #else
 #	define D_V4_SHUFFLE(_v, _ix, _iy, _iz, _iw) _mm_shuffle_ps(_v, _v, (_ix)|((_iy)<<2)|((_iz)<<4)|((_iw)<<6))
+#	define D_V4_MIX(_v0, _v1, _ix0, _iy0, _iz1, _iw1) _mm_shuffle_ps(_v0, _v1, (_ix0)|((_iy0)<<2)|((_iz1)<<4)|((_iw1)<<6))
 #endif
 
 #define D_V4_FILL_ELEM(_v, _idx) D_V4_SHUFFLE(_v, _idx, _idx, _idx, _idx)
@@ -251,6 +253,9 @@ void V4_print(QVEC v);
 void MTX_cpy(MTX mdst, MTX msrc);
 void MTX_clear(MTX m);
 void MTX_unit(MTX m);
+void MTX_load(MTX m, float* p);
+void MTX_load64(MTX m, double* p);
+void MTX_store(MTX m, float* p);
 void MTX_transpose(MTX m0, MTX m1);
 void MTX_transpose_sr(MTX m0, MTX m1);
 void MTX_invert(MTX m0, MTX m1);
