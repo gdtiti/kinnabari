@@ -261,11 +261,11 @@ QVEC V4_set(float x, float y, float z, float w) {
 	v0.w = w;
 	return v0.qv;
 #else
-	if (0) {
+# if defined(_WIN64) || (defined(_MSC_VER) && (_MSC_VER >= 1500))
 		return _mm_set_ps(w, z, y, x);
-	} else {
+# else
 		return _mm_unpacklo_ps(_mm_unpacklo_ps(_mm_set_ss(x), _mm_set_ss(z)), _mm_unpacklo_ps(_mm_set_ss(y), _mm_set_ss(w)));
-	}
+# endif
 #endif
 }
 
@@ -288,6 +288,9 @@ QVEC V4_fill(float x) {
 #endif
 }
 
+#if defined(_WIN64) && defined(_MSC_VER) && (_MSC_VER < 1500)
+D_NOINLINE
+#endif
 QVEC V4_load(float* p) {
 #if D_KISS
 	UVEC v0;
