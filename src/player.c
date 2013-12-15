@@ -19,6 +19,7 @@
  */
 
 #include "system.h"
+#include "input.h"
 #include "calc.h"
 #include "util.h"
 #include "keyframe.h"

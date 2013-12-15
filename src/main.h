@@ -1,4 +1,5 @@
 #include "system.h"
+#include "input.h"
 #include "job.h"
 #include "calc.h"
 #include "util.h"
@@ -12,5 +13,4 @@
 #include "room.h"
 #include "model.h"
 #include "player.h"
-
 

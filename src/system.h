@@ -142,22 +142,6 @@ typedef sys_i32 sys_intptr;
 
 typedef void* sys_handle;
 
-typedef enum _E_KEY {
-	E_KEY_LEFT   = (1<<0),
-	E_KEY_RIGHT  = (1<<1),
-	E_KEY_UP     = (1<<2),
-	E_KEY_DOWN   = (1<<3)
-} E_KEY;
-
-typedef struct _INPUT_STATE {
-	sys_ui32 state;
-	sys_ui32 state_old;
-	sys_ui32 state_chg;
-	sys_ui32 state_trg;
-} INPUT_STATE;
-
-D_EXTERN_DATA INPUT_STATE g_input;
-
 typedef union _SYS_ADDR {
 	sys_ui64 addr64;
 	void* ptr;
@@ -194,7 +178,6 @@ void* SYS_malloc(int size);
 void SYS_free(void* pMem);
 void SYS_log(const char* fmt, ...);
 void* SYS_load(const char* fname);
-void SYS_get_input(void);
 sys_i64 SYS_get_timestamp(void);
 void SYS_init_FPU(void);
 void SYS_con_init(void);

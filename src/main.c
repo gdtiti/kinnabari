@@ -81,6 +81,7 @@ static void Init() {
 
 	SYS_init();
 	CFG_init("../data/knbcfg.txt");
+	INP_init();
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -125,7 +126,7 @@ static void Draw() {
 
 	g_wk.frame_start_time = GetTickCount();
 
-	SYS_get_input();
+	INP_update();
 
 	RDR_begin();
 	PLR_ctrl();
@@ -175,6 +176,7 @@ static void Reset() {
 	MDL_sys_reset();
 	JOB_sys_reset();
 	RDR_reset();
+	INP_reset();
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
