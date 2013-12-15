@@ -34,6 +34,6 @@ typedef struct _INPUT_STATE {
 
 D_EXTERN_DATA INPUT_STATE g_input;
 
-void INP_init(void);
-void INP_reset(void);
-void INP_update(void);
+D_EXTERN_FUNC void INP_init(void);
+D_EXTERN_FUNC void INP_reset(void);
+D_EXTERN_FUNC void INP_update(void);
