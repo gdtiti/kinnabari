@@ -176,6 +176,18 @@ float F_decode_half(sys_ui16 h) {
 	return F_set_bits(bits);
 }
 
+float F_hypot(float x, float y) {
+	return sqrtf(D_SQ(x) + D_SQ(y));
+}
+
+float F_limit_pi(float rad) {
+	return rad - ((float)((sys_i32)(rad/D_PI))*D_PI);
+}
+
+float F_sin_from_cos(float c) {
+	return sqrtf(1.0f - D_SQ(c));
+}
+
 
 void VEC_cpy(VEC vdst, VEC vsrc) {
 	int i;
@@ -1284,6 +1296,10 @@ void MTX_set_row(MTX m, int idx, QVEC v) {
 }
 
 
+QVEC QUAT_unit() {
+	return V4_load(g_identity[3]);
+}
+
 QVEC QUAT_from_axis_angle(QVEC axis, float ang) {
 	float sc[2];
 	SinCos(ang*0.5f, sc);
@@ -1663,7 +1679,7 @@ QVEC CLR_Lab_to_LCH(QVEC qlab) {
 	L = Lab.x;
 	a = Lab.y;
 	b = Lab.z;
-	C = sqrtf(D_SQ(a) + D_SQ(b));
+	C = F_hypot(a, b);
 	H = atan2f(b, a);
 	return V4_set_vec(L, C, H);
 }

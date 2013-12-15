@@ -53,6 +53,9 @@
 #	define D_MIN_FLOAT ((float)(1.175494351e-38))
 #endif
 
+#define D_SQRT2 (1.4142135623730950488016887242097f)
+#define D_SQRT3 (1.7320508075688772935274463415059f)
+
 #define D_SQ(_x) ((_x) * (_x))
 #define D_CB(_x) ((_x) * (_x) * (_x))
 #define D_CLAMP(_x, _min, _max) ( (_x) < (_min) ? (_min) : (_x) > (_max) ? (_max) : (_x) )
@@ -189,6 +192,9 @@ sys_ui32 F_get_bits(float x);
 float F_set_bits(sys_ui32 bits);
 sys_ui16 F_encode_half(float x);
 float F_decode_half(sys_ui16 h);
+float F_hypot(float x, float y);
+float F_limit_pi(float rad);
+float F_sin_from_cos(float c);
 
 void VEC_cpy(VEC vdst, VEC vsrc);
 void VEC_add(VEC v0, VEC v1, VEC v2);
@@ -278,6 +284,7 @@ QVEC MTX_get_rot_xyz(MTX m);
 QVEC MTX_get_row(MTX m, int idx);
 void MTX_set_row(MTX m, int idx, QVEC v);
 
+QVEC QUAT_unit(void);
 QVEC QUAT_from_axis_angle(QVEC axis, float ang);
 QVEC QUAT_from_mtx(MTX m);
 QVEC QUAT_get_vec_x(QVEC q);
