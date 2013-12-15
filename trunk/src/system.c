@@ -27,17 +27,6 @@
 
 #include "system.h"
 
-INPUT_STATE g_input;
-
-static struct _INP_KEYMAP {
-	sys_uint key, code;
-} s_key_map[] = {
-	{VK_LEFT,     E_KEY_LEFT},
-	{VK_RIGHT,    E_KEY_RIGHT},
-	{VK_UP,       E_KEY_UP},
-	{VK_DOWN,     E_KEY_DOWN}
-};
-
 static void Sys_w32_cwd() {
 	LPTSTR cmd;
 	LPTSTR exe_name;
@@ -56,7 +45,6 @@ static void Sys_w32_cwd() {
 
 void SYS_init() {
 	Sys_w32_cwd();
-	memset(&g_input, 0, sizeof(g_input));
 }
 
 void* SYS_malloc(int size) {
@@ -111,38 +99,6 @@ void* SYS_load(const char* fname) {
 		fclose(f);
 	}
 	return pData;
-}
-
-void SYS_get_input() {
-	int i;
-	sys_uint state;
-	state = 0;
-	for (i = 0; i < D_ARRAY_LENGTH(s_key_map); ++i) {
-		int b = !!(GetAsyncKeyState(s_key_map[i].key) & 0x8000);
-		if (b) state |= s_key_map[i].code;
-	}
-	if ( (state & (E_KEY_LEFT | E_KEY_RIGHT)) == (E_KEY_LEFT | E_KEY_RIGHT) ) {
-		if (g_input.state_old & E_KEY_LEFT) {
-			state &= ~E_KEY_RIGHT;
-		} else if (g_input.state_old & E_KEY_RIGHT) {
-			state &= ~E_KEY_LEFT;
-		} else {
-			state &= ~E_KEY_LEFT;
-		}
-	}
-	if ( (state & (E_KEY_UP | E_KEY_DOWN)) == (E_KEY_UP | E_KEY_DOWN) ) {
-		if (g_input.state_old & E_KEY_UP) {
-			state &= ~E_KEY_DOWN;
-		} else if (g_input.state_old & E_KEY_DOWN) {
-			state &= ~E_KEY_UP;
-		} else {
-			state &= ~E_KEY_UP;
-		}
-	}
-	g_input.state_old = g_input.state;
-	g_input.state = state;
-	g_input.state_chg = state ^ g_input.state_old;
-	g_input.state_trg = state & g_input.state_chg;
 }
 
 static void CPU_serialize() {
