@@ -1907,12 +1907,24 @@ static QVEC Poly_norm_update(QVEC nrm, QVEC vi, QVEC vj) {
 	return V4_add(nrm, nv);
 }
 
-QVEC GEOM_poly_norm(QVEC* pVtx, int nvtx) {
+QVEC GEOM_poly_norm_cw(QVEC* pVtx, int nvtx) {
 	int i, j;
 	QVEC nrm = V4_zero();
 	for (i = 0; i < nvtx; ++i) {
 		j = i - 1;
 		if (j < 0) j = nvtx - 1;
+		nrm = Poly_norm_update(nrm, pVtx[i], pVtx[j]);
+	}
+	nrm = V4_normalize(nrm);
+	return nrm;
+}
+
+QVEC GEOM_poly_norm_ccw(QVEC* pVtx, int nvtx) {
+	int i, j;
+	QVEC nrm = V4_zero();
+	for (i = 0; i < nvtx; ++i) {
+		j = i + 1;
+		if (j >= nvtx) j = 0;
 		nrm = Poly_norm_update(nrm, pVtx[i], pVtx[j]);
 	}
 	nrm = V4_normalize(nrm);

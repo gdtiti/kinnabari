@@ -78,22 +78,6 @@ typedef struct _CAMERA {
 	LANE_ANIM* pLane_anm;
 } CAMERA;
 
-typedef struct _TRACKBALL_COORD {
-	sys_i32 x;
-	sys_i32 y;
-} TRACKBALL_COORD;
-
-typedef struct _TRACKBALL {
-	UVEC spin;
-	UVEC quat;
-	float radius;
-	sys_i32 width;
-	sys_i32 height;
-	TRACKBALL_COORD coord;
-	TRACKBALL_COORD prev;
-	TRACKBALL_COORD org;
-} TRACKBALL;
-
 D_EXTERN_DATA CAMERA g_cam;
 
 D_EXTERN_FUNC void CAM_init(CAMERA* pCam);
@@ -109,6 +93,3 @@ D_EXTERN_FUNC int CAM_cull_box_ex(CAMERA* pCam, GEOM_AABB* pBox);
 D_EXTERN_FUNC void CAM_load_data(CAMERA* pCam, const char* fname_kfr, const char* fname_lane);
 D_EXTERN_FUNC void CAM_free_data(CAMERA* pCam);
 D_EXTERN_FUNC void CAM_exec(CAMERA* pCam, QVEC pos, float offs_up, float offs_dn, float heading);
-
-D_EXTERN_FUNC void TBALL_reset(TRACKBALL* pBall, sys_i32 w, sys_i32 h, float r);
-D_EXTERN_FUNC void TBALL_update(TRACKBALL* pBall, sys_i32 x, sys_i32 y, sys_i32 prev_x, sys_i32 prev_y, int drag_flg);

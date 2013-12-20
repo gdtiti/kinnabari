@@ -101,6 +101,23 @@ typedef struct _UTL_GEOMETRY {
 } UTL_GEOMETRY;
 
 
+typedef struct _TRACKBALL_COORD {
+	sys_i32 x;
+	sys_i32 y;
+} TRACKBALL_COORD;
+
+typedef struct _TRACKBALL {
+	UVEC spin;
+	UVEC quat;
+	float radius;
+	sys_i32 width;
+	sys_i32 height;
+	TRACKBALL_COORD coord;
+	TRACKBALL_COORD prev;
+	TRACKBALL_COORD org;
+} TRACKBALL;
+
+
 D_EXTERN_FUNC SYM_POOL* DICT_pool_create(void);
 D_EXTERN_FUNC void DICT_pool_destroy(SYM_POOL* pSelf);
 D_EXTERN_FUNC sys_int DICT_pool_get_free(SYM_POOL* pSelf);
@@ -142,7 +159,12 @@ D_EXTERN_FUNC GMT_ATTR_INFO* GMT_find_attr_pol(UTL_GEOMETRY* pGeo, const char* n
 D_EXTERN_FUNC void* GMT_get_attr_val_glb(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo);
 D_EXTERN_FUNC void* GMT_get_attr_val_pnt(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pnt_id);
 D_EXTERN_FUNC void* GMT_get_attr_val_pol(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pol_id);
+D_EXTERN_FUNC QVEC GMT_calc_pol_centroid(UTL_GEOMETRY* pGeo, int pol_id);
+D_EXTERN_FUNC QVEC GMT_calc_pol_normal(UTL_GEOMETRY* pGeo, int pol_id);
 
 D_EXTERN_FUNC float UTL_frand01(void);
 D_EXTERN_FUNC float UTL_frand_11(void);
 D_EXTERN_FUNC float UTL_smooth_chg(float prev, float now, int len);
+
+D_EXTERN_FUNC void TBALL_init(TRACKBALL* pBall, sys_i32 w, sys_i32 h, float r);
+D_EXTERN_FUNC void TBALL_update(TRACKBALL* pBall, sys_i32 x, sys_i32 y, sys_i32 prev_x, sys_i32 prev_y, int drag_flg);
