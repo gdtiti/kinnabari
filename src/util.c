@@ -586,6 +586,48 @@ void* GMT_get_attr_val_pol(UTL_GEOMETRY* pGeo, GMT_ATTR_INFO* pInfo, int pol_id)
 	return pVal;
 }
 
+QVEC GMT_calc_pol_centroid(UTL_GEOMETRY* pGeo, int pol_id) {
+	QVEC c = V4_zero();
+	GMT_POLY* pPol = GMT_get_pol(pGeo, pol_id);
+	if (pPol) {
+		int i;
+		int n = pPol->nb_vtx;
+		for (i = 0; i < n; ++i) {
+			UVEC* pPnt = GMT_get_pnt(pGeo, pPol->idx[i]);
+			if (pPnt) {
+				c = V4_add(c, pPnt->qv);
+			}
+		}
+	}
+	return V4_set_w1(c);
+}
+
+QVEC GMT_calc_pol_normal(UTL_GEOMETRY* pGeo, int pol_id) {
+	QVEC nrm = V4_zero();
+	GMT_POLY* pPol = GMT_get_pol(pGeo, pol_id);
+	if (pPol) {
+		int i;
+		int n = pPol->nb_vtx;
+		QVEC vtx[8];
+		QVEC* pVtx = vtx;
+		if (n > D_ARRAY_LENGTH(vtx)) {
+			pVtx = (QVEC*)SYS_malloc(n*sizeof(QVEC));
+		}
+		for (i = 0; i < n; ++i) {
+			UVEC* pPnt = GMT_get_pnt(pGeo, pPol->idx[i]);
+			pVtx[i] = V4_zero();
+			if (pPnt) {
+				pVtx[i] = pPnt->qv;
+			}
+		}
+		nrm = GEOM_poly_norm_cw(pVtx, n);
+		if (pVtx != vtx) {
+			SYS_free(pVtx);
+		}
+	}
+	return nrm;
+}
+
 
 float UTL_frand01() {
 	union {sys_ui32 u32; float f32;} d32;
@@ -608,3 +650,55 @@ float UTL_smooth_chg(float prev, float now, int len) {
 	return (prev*(flen-1.0f) + now) / flen;
 }
 
+void TBALL_init(TRACKBALL* pBall, sys_i32 w, sys_i32 h, float r) {
+	memset(pBall, 0, sizeof(TRACKBALL));
+	pBall->width = w;
+	pBall->height = h;
+	pBall->radius = r;
+	pBall->spin.qv = QUAT_unit();
+	pBall->quat.qv = QUAT_unit();
+}
+
+static QVEC Proj_sph_hyperbola(QVEC v, float r) {
+	float x = V4_at(v, 0);
+	float y = V4_at(v, 1);
+	float z = 0.0f;
+	float d = F_hypot(x, y);
+	float t = r / D_SQRT2;
+	if (d < t) {
+		z = sqrtf(D_SQ(r) - D_SQ(d));
+	} else {
+		z = D_SQ(t) / d;
+	}
+	return V4_set_vec(x, y, z);
+}
+
+void TBALL_update(TRACKBALL* pBall, sys_i32 x, sys_i32 y, sys_i32 prev_x, sys_i32 prev_y, int drag_flg) {
+	int dx, dy;
+	pBall->coord.x = x;
+	pBall->coord.y = y;
+	pBall->prev.x = prev_x;
+	pBall->prev.y = prev_y;
+	if (!drag_flg) {
+		pBall->org.x = prev_x;
+		pBall->org.y = prev_y;
+	}
+	dx = x - prev_x;
+	dy = y - prev_y;
+	if (dx || dy) {
+		int x0 = pBall->org.x;
+		int y0 = pBall->org.y;
+		float r = pBall->radius;
+		QVEC pos0 = V4_set_vec((float)(prev_x - x0), (float)(y0 - prev_y), 0.0f);
+		QVEC pos1 = V4_set_vec((float)(x - x0), (float)(y0 - y), 0.0f);
+		QVEC sv = V4_set_vec(1.0f / (pBall->width - 1.0f), 1.0f / (pBall->height - 1.0f), 0.0f);
+		QVEC p0 = Proj_sph_hyperbola(V4_mul(pos0, sv), r);
+		QVEC p1 = Proj_sph_hyperbola(V4_mul(pos1, sv), r);
+		QVEC dir = V4_sub(p0, p1);
+		QVEC axis = V4_cross(p1, p0);
+		float t = D_CLAMP_F(V4_mag(dir) / (2.0f*r), -1.0f, 1.0f);
+		float ang = 2.0f*asinf(t);
+		pBall->spin.qv = QUAT_from_axis_angle(axis, ang);
+		pBall->quat.qv = QUAT_normalize(QUAT_mul(pBall->quat.qv, pBall->spin.qv));
+	}
+}
