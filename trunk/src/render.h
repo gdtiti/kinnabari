@@ -344,6 +344,10 @@ D_EXTERN_FUNC void RDR_set_fog_curve(float p1, float p2);
 D_EXTERN_FUNC void RDR_set_fog_color(float r, float g, float b);
 D_EXTERN_FUNC void RDR_set_fog_density(float d);
 D_EXTERN_FUNC RDR_VIEW* RDR_get_view(void);
+D_EXTERN_FUNC void RDR_set_shadow_dir(QVEC dir);
+D_EXTERN_FUNC void RDR_set_headlight_color(float r, float g, float b);
+D_EXTERN_FUNC void RDR_set_headlight_intensity(float val);
+D_EXTERN_FUNC void RDR_set_def_sh_intensity(float val);
 
 D_EXTERN_FUNC UVEC* RDR_get_val_v(int n);
 D_EXTERN_FUNC float* RDR_get_val_f(int n);

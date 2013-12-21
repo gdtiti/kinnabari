@@ -523,6 +523,8 @@ struct RDR_DB_WK {
 	RDR_VAL_WK mVal_wk[2];
 	RDR_VIEW mView[2];
 	UVEC mShadow_dir[2];
+	UVEC mHeadlight_clr[2];
+	float mSH_intensity[2];
 
 	void Init() {
 		mIdx_db = 0;
@@ -553,6 +555,11 @@ struct RDR_DB_WK {
 
 		mShadow_dir[0].qv = V4_normalize(V4_set_vec(-0.15f, -0.9f, -0.6f));
 		mShadow_dir[1].qv = mShadow_dir[0].qv;
+
+		mHeadlight_clr[0].qv = V4_set(0.7f, 0.7f, 0.7f, 1.0f);
+		mHeadlight_clr[1].qv = mHeadlight_clr[0].qv;
+		mSH_intensity[0] = 0.1f;
+		mSH_intensity[1] = mSH_intensity[0];
 	}
 
 	void Begin() {
@@ -603,9 +610,41 @@ struct RDR_DB_WK {
 		return &mView[idx];
 	}
 
+	void Set_work_shadow_dir(QVEC dir) {
+		int idx = mIdx_db;
+		mShadow_dir[idx].qv = V4_normalize(dir);
+	}
+
 	QVEC Get_exec_shadow_dir() {
 		int idx = mIdx_db ^ 1;
 		return mShadow_dir[idx].qv;
+	}
+
+	void Set_work_headlight_color(float r, float g, float b) {
+		int idx = mIdx_db;
+		mHeadlight_clr[idx].r = r;
+		mHeadlight_clr[idx].g = g;
+		mHeadlight_clr[idx].b = b;
+	}
+
+	void Set_work_headlight_intensity(float val) {
+		int idx = mIdx_db;
+		mHeadlight_clr[idx].a = val;
+	}
+
+	UVEC* Get_exec_headlight() {
+		int idx = mIdx_db ^ 1;
+		return &mHeadlight_clr[idx];
+	}
+
+	void Set_work_sh_intensity(float val) {
+		int idx = mIdx_db;
+		mSH_intensity[idx] = val;
+	}
+
+	float Get_exec_sh_intensity() {
+		int idx = mIdx_db ^ 1;
+		return mSH_intensity[idx];
 	}
 
 	void Apply_exec_view() {
@@ -2314,14 +2353,15 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	pGP->world[2].qv = V4_load(g_identity[2]);
 
 	// default headlight
+	UVEC* pHlit = pRdr->mDb_wk.Get_exec_headlight();
 	dir_vec.qv = V4_scale(V4_load(pRdr->mDb_wk.Get_exec_view()->iview[2]), -1.0f);
-	dir_color.r = 0.7f;
-	dir_color.g = 0.7f;
-	dir_color.b = 0.7f;
+	dir_color.r = pHlit->r;
+	dir_color.g = pHlit->g;
+	dir_color.b = pHlit->b;
 	SH_calc_dir(&sh_dir, &dir_color, &dir_vec);
-	SH_scale(&sh_dir, &sh_dir, 1.0f);
+	SH_scale(&sh_dir, &sh_dir, pHlit->a);
 
-	SH_scale(&sh_coef, &sh_env, 0.1f);
+	SH_scale(&sh_coef, &sh_env, pRdr->mDb_wk.Get_exec_sh_intensity());
 	SH_add(&sh_coef, &sh_coef, &sh_dir);
 	SH_calc_param(&sh_param, &sh_coef);
 	memcpy(&pGP->SH, &sh_param, sizeof(SH_PARAM));
@@ -2463,6 +2503,22 @@ void RDR_set_fog_density(float d) {
 
 RDR_VIEW* RDR_get_view() {
 	return s_rdr.mDb_wk.Get_work_view();
+}
+
+void RDR_set_shadow_dir(QVEC dir) {
+	s_rdr.mDb_wk.Set_work_shadow_dir(dir);
+}
+
+void RDR_set_headlight_color(float r, float g, float b) {
+	s_rdr.mDb_wk.Set_work_headlight_color(r, g, b);
+}
+
+void RDR_set_headlight_intensity(float val) {
+	s_rdr.mDb_wk.Set_work_headlight_intensity(val);
+}
+
+void RDR_set_def_sh_intensity(float val) {
+	s_rdr.mDb_wk.Set_work_sh_intensity(val);
 }
 
 UVEC* RDR_get_val_v(int n) {
@@ -2786,7 +2842,8 @@ RDR_TEXTURE* RDR_tex_create(void* pTop, int w, int h, int d, int nb_lvl, sys_ui3
 			if (type == E_RDR_TEXTYPE_2D) {
 				((IDirect3DTexture9*)pTex->handle)->LockRect(i, &rect, NULL, 0);
 			} else if (type == E_RDR_TEXTYPE_CUBE) {
-				((IDirect3DCubeTexture9*)pTex->handle)->LockRect((D3DCUBEMAP_FACES)n, i, &rect, NULL, 0);
+				D3DCUBEMAP_FACES face = (D3DCUBEMAP_FACES)n;
+				((IDirect3DCubeTexture9*)pTex->handle)->LockRect(face, i, &rect, NULL, 0);
 			}
 			if (rect.pBits) {
 				int y;
