@@ -328,6 +328,16 @@ typedef struct _RDR_VIEW {
 	UVEC dir;
 } RDR_VIEW;
 
+typedef struct _RDR_LIGHT {
+	UVEC headlight_color;
+	float sh_intensity;
+} RDR_LIGHT;
+
+typedef struct _RDR_SHADOW {
+	UVEC dir;
+	UVEC color_density;
+} RDR_SHADOW;
+
 
 #include "gen/gparam.h"
 
@@ -344,10 +354,8 @@ D_EXTERN_FUNC void RDR_set_fog_curve(float p1, float p2);
 D_EXTERN_FUNC void RDR_set_fog_color(float r, float g, float b);
 D_EXTERN_FUNC void RDR_set_fog_density(float d);
 D_EXTERN_FUNC RDR_VIEW* RDR_get_view(void);
-D_EXTERN_FUNC void RDR_set_shadow_dir(QVEC dir);
-D_EXTERN_FUNC void RDR_set_headlight_color(float r, float g, float b);
-D_EXTERN_FUNC void RDR_set_headlight_intensity(float val);
-D_EXTERN_FUNC void RDR_set_def_sh_intensity(float val);
+D_EXTERN_FUNC RDR_LIGHT* RDR_get_light(void);
+D_EXTERN_FUNC RDR_SHADOW* RDR_get_shadow(void);
 
 D_EXTERN_FUNC UVEC* RDR_get_val_v(int n);
 D_EXTERN_FUNC float* RDR_get_val_f(int n);
