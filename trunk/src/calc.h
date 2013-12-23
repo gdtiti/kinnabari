@@ -246,6 +246,7 @@ QVEC V4_neg(QVEC v);
 QVEC V4_inv(QVEC v);
 QVEC V4_rcp(QVEC v);
 QVEC V4_sqrt(QVEC v);
+QVEC V4_neg_xyz(QVEC v);
 int V4_same(QVEC a, QVEC b);
 int V4_same_xyz(QVEC a, QVEC b);
 int V4_eq(QVEC a, QVEC b);
@@ -296,6 +297,8 @@ QVEC QUAT_mul(QVEC q, QVEC b);
 QVEC QUAT_apply(QVEC q, QVEC v);
 QVEC QUAT_lerp(QVEC a, QVEC b, float bias);
 QVEC QUAT_slerp(QVEC a, QVEC b, float bias);
+QVEC QUAT_conjugate(QVEC q);
+QVEC QUAT_invert(QVEC q);
 
 sys_ui32 CLR_f2i(QVEC cv);
 QVEC CLR_i2f(sys_ui32 ci);

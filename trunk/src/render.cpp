@@ -522,9 +522,20 @@ struct RDR_DB_WK {
 	RDR_PARAM_WK mParam_wk[2];
 	RDR_VAL_WK mVal_wk[2];
 	RDR_VIEW mView[2];
-	UVEC mShadow_dir[2];
-	UVEC mHeadlight_clr[2];
-	float mSH_intensity[2];
+	RDR_LIGHT mLight[2];
+	RDR_SHADOW mShadow[2];
+
+	void Set_def_light(int idx) {
+		RDR_LIGHT* pLit = &mLight[idx];
+		pLit->headlight_color.qv = V4_set(0.7f, 0.7f, 0.7f, 1.0f);
+		pLit->sh_intensity = 0.1f;
+	}
+
+	void Set_def_shadow(int idx) {
+		RDR_SHADOW* pSdw = &mShadow[idx];
+		pSdw->dir.qv = V4_normalize(V4_set_vec(-0.15f, -0.9f, -0.6f));
+		pSdw->color_density.qv = V4_set(0.1f, 0.1f, 0.0f, 0.8f);
+	}
 
 	void Init() {
 		mIdx_db = 0;
@@ -553,13 +564,10 @@ struct RDR_DB_WK {
 		MTX_mul(pView->view_proj, pView->view, pView->proj);
 		memcpy(&mView[1], pView, sizeof(RDR_VIEW));
 
-		mShadow_dir[0].qv = V4_normalize(V4_set_vec(-0.15f, -0.9f, -0.6f));
-		mShadow_dir[1].qv = mShadow_dir[0].qv;
-
-		mHeadlight_clr[0].qv = V4_set(0.7f, 0.7f, 0.7f, 1.0f);
-		mHeadlight_clr[1].qv = mHeadlight_clr[0].qv;
-		mSH_intensity[0] = 0.1f;
-		mSH_intensity[1] = mSH_intensity[0];
+		Set_def_light(0);
+		Set_def_light(1);
+		Set_def_shadow(0);
+		Set_def_shadow(1);
 	}
 
 	void Begin() {
@@ -610,43 +618,6 @@ struct RDR_DB_WK {
 		return &mView[idx];
 	}
 
-	void Set_work_shadow_dir(QVEC dir) {
-		int idx = mIdx_db;
-		mShadow_dir[idx].qv = V4_normalize(dir);
-	}
-
-	QVEC Get_exec_shadow_dir() {
-		int idx = mIdx_db ^ 1;
-		return mShadow_dir[idx].qv;
-	}
-
-	void Set_work_headlight_color(float r, float g, float b) {
-		int idx = mIdx_db;
-		mHeadlight_clr[idx].r = r;
-		mHeadlight_clr[idx].g = g;
-		mHeadlight_clr[idx].b = b;
-	}
-
-	void Set_work_headlight_intensity(float val) {
-		int idx = mIdx_db;
-		mHeadlight_clr[idx].a = val;
-	}
-
-	UVEC* Get_exec_headlight() {
-		int idx = mIdx_db ^ 1;
-		return &mHeadlight_clr[idx];
-	}
-
-	void Set_work_sh_intensity(float val) {
-		int idx = mIdx_db;
-		mSH_intensity[idx] = val;
-	}
-
-	float Get_exec_sh_intensity() {
-		int idx = mIdx_db ^ 1;
-		return mSH_intensity[idx];
-	}
-
 	void Apply_exec_view() {
 		QMTX tm;
 		int idx = mIdx_db ^ 1;
@@ -656,6 +627,26 @@ struct RDR_DB_WK {
 		g_rdr_param.view_proj[2].qv = V4_load(tm[2]);
 		g_rdr_param.view_proj[3].qv = V4_load(tm[3]);
 		g_rdr_param.view_pos.qv = mView[idx].pos.qv;
+	}
+
+	RDR_LIGHT* Get_work_light() {
+		int idx = mIdx_db;
+		return &mLight[idx];
+	}
+
+	RDR_LIGHT* Get_exec_light() {
+		int idx = mIdx_db ^ 1;
+		return &mLight[idx];
+	}
+
+	RDR_SHADOW* Get_work_shadow() {
+		int idx = mIdx_db;
+		return &mShadow[idx];
+	}
+
+	RDR_SHADOW* Get_exec_shadow() {
+		int idx = mIdx_db ^ 1;
+		return &mShadow[idx];
 	}
 
 	void Flip() {
@@ -2200,6 +2191,7 @@ static void Rdr_shadow_calc() {
 	UVEC box[8];
 	RDR_WORK* pRdr = &s_rdr;
 	RDR_VIEW* pView = pRdr->mDb_wk.Get_exec_view();
+	RDR_SHADOW* pSdw = pRdr->mDb_wk.Get_exec_shadow();
 	int i;
 	float vdist, snear, sfar, zmin, zmax, ymin, ymax, y, sy, t;
 
@@ -2210,8 +2202,7 @@ static void Rdr_shadow_calc() {
 		{0.5f, 0.5f, 0.0f, 1.0f}
 	};
 
-
-	sdir.qv = V4_normalize(pRdr->mDb_wk.Get_exec_shadow_dir());
+	sdir.qv = V4_normalize(pSdw->dir.qv);
 	pRdr->mShadow_dir = sdir.qv;
 	vdir.qv = V4_scale(V4_load(pView->iview[2]), -1.0f);
 	vdist = 25.0f * pView->proj[1][1];
@@ -2335,6 +2326,8 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	UVEC dir_color;
 	RDR_WORK* pRdr = &s_rdr;
 	RDR_GPARAM* pGP = &g_rdr_param;
+	RDR_VIEW* pView = pRdr->mDb_wk.Get_exec_view();
+	RDR_LIGHT* pLit = pRdr->mDb_wk.Get_exec_light();
 	IDirect3DDevice9* pDev = pRdr->mpDev;
 
 	static SH_COEF sh_env = {
@@ -2353,15 +2346,14 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	pGP->world[2].qv = V4_load(g_identity[2]);
 
 	// default headlight
-	UVEC* pHlit = pRdr->mDb_wk.Get_exec_headlight();
-	dir_vec.qv = V4_scale(V4_load(pRdr->mDb_wk.Get_exec_view()->iview[2]), -1.0f);
-	dir_color.r = pHlit->r;
-	dir_color.g = pHlit->g;
-	dir_color.b = pHlit->b;
+	dir_vec.qv = V4_scale(V4_load(pView->iview[2]), -1.0f);
+	dir_color.r = pLit->headlight_color.r;
+	dir_color.g = pLit->headlight_color.g;
+	dir_color.b = pLit->headlight_color.b;
 	SH_calc_dir(&sh_dir, &dir_color, &dir_vec);
-	SH_scale(&sh_dir, &sh_dir, pHlit->a);
+	SH_scale(&sh_dir, &sh_dir, pLit->headlight_color.a);
 
-	SH_scale(&sh_coef, &sh_env, pRdr->mDb_wk.Get_exec_sh_intensity());
+	SH_scale(&sh_coef, &sh_env, pLit->sh_intensity);
 	SH_add(&sh_coef, &sh_coef, &sh_dir);
 	SH_calc_param(&sh_param, &sh_coef);
 	memcpy(&pGP->SH, &sh_param, sizeof(SH_PARAM));
@@ -2382,6 +2374,7 @@ static void Rdr_recv_prologue(RDR_LAYER* pLyr) {
 	RDR_WORK* pRdr = &s_rdr;
 	RDR_GPARAM* pGP = &g_rdr_param;
 	IDirect3DDevice9* pDev = pRdr->mpDev;
+	RDR_SHADOW* pSdw = pRdr->mDb_wk.Get_exec_shadow();
 	float smap_size = pRdr->mRT.mpShadow->w;
 
 	Set_rt(NULL);
@@ -2398,7 +2391,7 @@ static void Rdr_recv_prologue(RDR_LAYER* pLyr) {
 	pGP->shadow_proj[1].qv = V4_load(tm[1]);
 	pGP->shadow_proj[2].qv = V4_load(tm[2]);
 	pGP->shadow_proj[3].qv = V4_load(tm[3]);
-	pGP->shadow_color.qv = V4_set(0.1f, 0.1f, 0.0f, 0.8f);
+	pGP->shadow_color.qv = pSdw->color_density.qv;
 	pGP->shadow_param.qv = V4_set(1.0f/smap_size, smap_size, 1000.0f, 0.0f);
 	pGP->shadow_dir.qv = pRdr->mShadow_dir;
 }
@@ -2505,20 +2498,12 @@ RDR_VIEW* RDR_get_view() {
 	return s_rdr.mDb_wk.Get_work_view();
 }
 
-void RDR_set_shadow_dir(QVEC dir) {
-	s_rdr.mDb_wk.Set_work_shadow_dir(dir);
+RDR_LIGHT* RDR_get_light() {
+	return s_rdr.mDb_wk.Get_work_light();
 }
 
-void RDR_set_headlight_color(float r, float g, float b) {
-	s_rdr.mDb_wk.Set_work_headlight_color(r, g, b);
-}
-
-void RDR_set_headlight_intensity(float val) {
-	s_rdr.mDb_wk.Set_work_headlight_intensity(val);
-}
-
-void RDR_set_def_sh_intensity(float val) {
-	s_rdr.mDb_wk.Set_work_sh_intensity(val);
+RDR_SHADOW* RDR_get_shadow() {
+	return s_rdr.mDb_wk.Get_work_shadow();
 }
 
 UVEC* RDR_get_val_v(int n) {

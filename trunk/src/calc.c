@@ -657,6 +657,21 @@ QVEC V4_sqrt(QVEC v) {
 #endif
 }
 
+QVEC V4_neg_xyz(QVEC v) {
+#if D_KISS
+	UVEC v0;
+	UVEC v1;
+	int i;
+	v1.qv = v;
+	for (i = 0; i < 3; ++i) {v0.f[i] = -v1.f[i];}
+	return v0.qv;
+#else
+	QVEC nv = _mm_sub_ps(_mm_setzero_ps(), v);
+	QVEC wv = D_V4_FILL_ELEM(v, 3);
+	return D_V4_MIX(nv, _mm_unpackhi_ps(nv, wv), 0, 1, 0, 3);
+#endif
+}
+
 int V4_same(QVEC a, QVEC b) {
 #if D_KISS
 	UVEC v1;
@@ -1473,6 +1488,15 @@ QVEC QUAT_slerp(QVEC a, QVEC b, float bias) {
 		bf *= bias;
 	}
 	return V4_combine(a, af, b, bf);
+}
+
+QVEC QUAT_conjugate(QVEC q) {
+	return V4_neg_xyz(q);
+}
+
+QVEC QUAT_invert(QVEC q) {
+	QVEC cq = QUAT_conjugate(q);
+	return V4_scale(cq, 1.0f/V4_dot4(cq, cq));
 }
 
 
