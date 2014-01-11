@@ -99,7 +99,7 @@ void CAM_update(CAMERA* pCam) {
 }
 
 void CAM_apply(CAMERA* pCam) {
-	RDR_VIEW* pView = RDR_get_view();
+	RDR_VIEW* pView = &RDR_get_ctx()->view;
 	MTX_cpy(pView->view, pCam->mtx_view);
 	MTX_cpy(pView->iview, pCam->mtx_view_i);
 	MTX_cpy(pView->proj, pCam->mtx_proj);

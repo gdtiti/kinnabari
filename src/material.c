@@ -83,7 +83,7 @@ RDR_BATCH_PARAM* MTL_apply(MATERIAL* pMtl, RDR_BATCH_PARAM* pParam) {
 		pParam->pVec = RDR_get_val_v(1);
 		pParam->pVec->qv = V4_normalize(pInfo->sun_dir.qv);
 	} else {
-		pParam->pVec = &RDR_get_view()->dir;
+		pParam->pVec = &RDR_get_ctx()->view.dir;
 	}
 	++pParam;
 

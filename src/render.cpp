@@ -521,20 +521,37 @@ struct RDR_DB_WK {
 	RDR_BATCH_WK mBatch_wk[2];
 	RDR_PARAM_WK mParam_wk[2];
 	RDR_VAL_WK mVal_wk[2];
-	RDR_VIEW mView[2];
-	RDR_LIGHT mLight[2];
-	RDR_SHADOW mShadow[2];
+	RDR_CONTEXT mCtx[2];
 
-	void Set_def_light(int idx) {
-		RDR_LIGHT* pLit = &mLight[idx];
+	static void Set_def_light(RDR_CONTEXT* pCtx) {
+		RDR_LIGHT* pLit = &pCtx->light;
 		pLit->headlight_color.qv = V4_set(0.7f, 0.7f, 0.7f, 1.0f);
 		pLit->sh_intensity = 0.1f;
 	}
 
-	void Set_def_shadow(int idx) {
-		RDR_SHADOW* pSdw = &mShadow[idx];
+	static void Set_def_shadow(RDR_CONTEXT* pCtx) {
+		RDR_SHADOW* pSdw = &pCtx->shadow;
 		pSdw->dir.qv = V4_normalize(V4_set_vec(-0.15f, -0.9f, -0.6f));
 		pSdw->color_density.qv = V4_set(0.1f, 0.1f, 0.0f, 0.8f);
+	}
+
+	static void Set_def_view(RDR_CONTEXT* pCtx) {
+		RDR_VIEW* pView = &pCtx->view;
+		pView->pos.qv = V4_set_pnt(7.0f, 3.0f, 12.0f);
+		MTX_make_view(pView->view, pView->pos.qv, V4_set_w1(V4_zero()), V4_load(g_identity[1]));
+		MTX_invert(pView->iview, pView->view);
+		pView->dir.qv = V4_scale(V4_load(pView->iview[2]), -1.0f);
+		MTX_make_proj(pView->proj, D_DEG2RAD(40.0f), 320.0f/240.0f, 0.1f, 10000.0f);
+		MTX_invert(pView->iproj, pView->proj);
+		MTX_mul(pView->view_proj, pView->view, pView->proj);
+	}
+
+	void Init_ctx(int idx) {
+		RDR_CONTEXT* pCtx = &mCtx[idx];
+		Set_def_light(pCtx);
+		Set_def_shadow(pCtx);
+		Set_def_view(pCtx);
+		pCtx->clear_color = D_RDR_ARGB32(0xFF, 0x55, 0x66, 0x77);
 	}
 
 	void Init() {
@@ -554,20 +571,8 @@ struct RDR_DB_WK {
 		mParam_wk[0].Alloc(n);
 		mParam_wk[1].Alloc(n);
 
-		RDR_VIEW* pView = &mView[0];
-		pView->pos.qv = V4_set_pnt(7.0f, 3.0f, 12.0f);
-		MTX_make_view(pView->view, pView->pos.qv, V4_set_w1(V4_zero()), V4_load(g_identity[1]));
-		MTX_invert(pView->iview, pView->view);
-		pView->dir.qv = V4_scale(V4_load(pView->iview[2]), -1.0f);
-		MTX_make_proj(pView->proj, D_DEG2RAD(40.0f), 320.0f/240.0f, 0.1f, 10000.0f);
-		MTX_invert(pView->iproj, pView->proj);
-		MTX_mul(pView->view_proj, pView->view, pView->proj);
-		memcpy(&mView[1], pView, sizeof(RDR_VIEW));
-
-		Set_def_light(0);
-		Set_def_light(1);
-		Set_def_shadow(0);
-		Set_def_shadow(1);
+		Init_ctx(0);
+		Init_ctx(1);
 	}
 
 	void Begin() {
@@ -608,45 +613,49 @@ struct RDR_DB_WK {
 		return &mLyr_wk[idx].mLyr[lyr_no];
 	}
 
-	RDR_VIEW* Get_work_view() {
+	RDR_CONTEXT* Get_work_ctx() {
 		int idx = mIdx_db;
-		return &mView[idx];
+		return &mCtx[idx];
+	}
+
+	RDR_CONTEXT* Get_exec_ctx() {
+		int idx = mIdx_db ^ 1;
+		return &mCtx[idx];
+	}
+
+	RDR_VIEW* Get_work_view() {
+		return &Get_work_ctx()->view;
 	}
 
 	RDR_VIEW* Get_exec_view() {
-		int idx = mIdx_db ^ 1;
-		return &mView[idx];
+		return &Get_exec_ctx()->view;
 	}
 
 	void Apply_exec_view() {
 		QMTX tm;
-		int idx = mIdx_db ^ 1;
-		MTX_transpose(tm, mView[idx].view_proj);
+		RDR_VIEW* pView = Get_exec_view();
+		MTX_transpose(tm, pView->view_proj);
 		g_rdr_param.view_proj[0].qv = V4_load(tm[0]);
 		g_rdr_param.view_proj[1].qv = V4_load(tm[1]);
 		g_rdr_param.view_proj[2].qv = V4_load(tm[2]);
 		g_rdr_param.view_proj[3].qv = V4_load(tm[3]);
-		g_rdr_param.view_pos.qv = mView[idx].pos.qv;
+		g_rdr_param.view_pos.qv = pView->pos.qv;
 	}
 
 	RDR_LIGHT* Get_work_light() {
-		int idx = mIdx_db;
-		return &mLight[idx];
+		return &Get_work_ctx()->light;
 	}
 
 	RDR_LIGHT* Get_exec_light() {
-		int idx = mIdx_db ^ 1;
-		return &mLight[idx];
+		return &Get_exec_ctx()->light;
 	}
 
 	RDR_SHADOW* Get_work_shadow() {
-		int idx = mIdx_db;
-		return &mShadow[idx];
+		return &Get_work_ctx()->shadow;
 	}
 
 	RDR_SHADOW* Get_exec_shadow() {
-		int idx = mIdx_db ^ 1;
-		return &mShadow[idx];
+		return &Get_exec_ctx()->shadow;
 	}
 
 	void Flip() {
@@ -1227,8 +1236,6 @@ struct RDR_WORK {
 	IDirect3DVertexShader9* mpCurr_vtx_shader;
 	IDirect3DPixelShader9* mpCurr_pix_shader;
 
-	sys_ui32 mClear_color;
-
 	float mDepth_bias;
 	float mNrm_scale;
 	float mNrm_bias;
@@ -1260,8 +1267,6 @@ struct RDR_WORK {
 		mImg.Init();
 		mFog.Init();
 		mThread.Init();
-
-		mClear_color = D_RDR_ARGB32(0xFF, 0x55, 0x66, 0x77);
 
 		mDepth_bias = 0.0f;
 		mNrm_scale = 1.0f;
@@ -2326,8 +2331,9 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	UVEC dir_color;
 	RDR_WORK* pRdr = &s_rdr;
 	RDR_GPARAM* pGP = &g_rdr_param;
-	RDR_VIEW* pView = pRdr->mDb_wk.Get_exec_view();
-	RDR_LIGHT* pLit = pRdr->mDb_wk.Get_exec_light();
+	RDR_CONTEXT* pCtx = pRdr->mDb_wk.Get_exec_ctx();
+	RDR_VIEW* pView = &pCtx->view;
+	RDR_LIGHT* pLit = &pCtx->light;
 	IDirect3DDevice9* pDev = pRdr->mpDev;
 
 	static SH_COEF sh_env = {
@@ -2337,7 +2343,7 @@ static void Rdr_mtl_prologue(RDR_LAYER* pLyr) {
 	};
 
 	Set_rt(NULL);
-	pDev->Clear(0, NULL, D3DCLEAR_TARGET, pRdr->mClear_color, 0.0f, 0);
+	pDev->Clear(0, NULL, D3DCLEAR_TARGET, pCtx->clear_color, 0.0f, 0);
 
 	pRdr->mDb_wk.Apply_exec_view();
 	pGP->base_color.qv = V4_fill(1.0f);
@@ -2494,16 +2500,8 @@ void RDR_set_fog_density(float d) {
 	s_rdr.mFog.Set_density(d);
 }
 
-RDR_VIEW* RDR_get_view() {
-	return s_rdr.mDb_wk.Get_work_view();
-}
-
-RDR_LIGHT* RDR_get_light() {
-	return s_rdr.mDb_wk.Get_work_light();
-}
-
-RDR_SHADOW* RDR_get_shadow() {
-	return s_rdr.mDb_wk.Get_work_shadow();
+RDR_CONTEXT* RDR_get_ctx() {
+	return s_rdr.mDb_wk.Get_work_ctx();
 }
 
 UVEC* RDR_get_val_v(int n) {
