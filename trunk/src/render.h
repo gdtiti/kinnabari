@@ -338,11 +338,19 @@ typedef struct _RDR_SHADOW {
 	UVEC color_density;
 } RDR_SHADOW;
 
+typedef struct _RDR_FOG {
+	UVEC color;
+	SPL_BEZ01 curve;
+	float start;
+	float end;
+} RDR_FOG;
+
 typedef struct _RDR_CONTEXT {
-	sys_ui32 clear_color;
 	RDR_VIEW view;
 	RDR_LIGHT light;
 	RDR_SHADOW shadow;
+	RDR_FOG fog;
+	sys_ui32 clear_color;
 } RDR_CONTEXT;
 
 
@@ -356,10 +364,6 @@ D_EXTERN_FUNC void RDR_init_thread_FPU(void);
 D_EXTERN_FUNC void RDR_begin(void);
 D_EXTERN_FUNC void RDR_exec(void);
 D_EXTERN_FUNC void RDR_set_nvec_encoding(float scale, float bias);
-D_EXTERN_FUNC void RDR_set_fog_range(float start, float end);
-D_EXTERN_FUNC void RDR_set_fog_curve(float p1, float p2);
-D_EXTERN_FUNC void RDR_set_fog_color(float r, float g, float b);
-D_EXTERN_FUNC void RDR_set_fog_density(float d);
 D_EXTERN_FUNC RDR_CONTEXT* RDR_get_ctx(void);
 
 D_EXTERN_FUNC UVEC* RDR_get_val_v(int n);
