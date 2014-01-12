@@ -139,6 +139,11 @@ typedef struct _SH_PARAM {
 	UVEC sh[7];
 } SH_PARAM;
 
+typedef struct _SPL_BEZ01 {
+	float p1;
+	float p2;
+} SPL_BEZ01;
+
 typedef struct _GEOM_LINE {
 	UVEC pos0;
 	UVEC pos1;
@@ -333,6 +338,9 @@ void SH_calc_param(SH_PARAM* pParam, SH_COEF* pCoef);
 
 float SPL_hermite(float p0, float m0, float p1, float m1, float t);
 float SPL_overhauser(QVEC pvec, float t);
+void SPL_bezier01_reset(SPL_BEZ01* pBez);
+void SPL_bezier01_set(SPL_BEZ01* pBez, float p1, float p2);
+float SPL_bezier01(SPL_BEZ01* pBez, float t);
 
 QVEC GEOM_get_plane(QVEC pos, QVEC nrm);
 QVEC GEOM_intersect_3_planes(QVEC pln0, QVEC pln1, QVEC pln2);

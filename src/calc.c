@@ -1893,6 +1893,29 @@ float SPL_overhauser(QVEC pvec, float t) {
 	return V4_dot4(pvec, tvec);
 }
 
+void SPL_bezier01_reset(SPL_BEZ01* pBez) {
+	SPL_bezier01_set(pBez, 1/3.0f, 2/3.0f);
+}
+
+void SPL_bezier01_set(SPL_BEZ01* pBez, float p1, float p2) {
+	pBez->p1 = p1;
+	pBez->p2 = p2;
+}
+
+float SPL_bezier01(SPL_BEZ01* pBez, float t) {
+	static QMTX mbez = {
+		{-1.0f,  3.0f, -3.0f, 1.0f},
+		{ 3.0f, -6.0f,  3.0f, 0.0f},
+		{-3.0f,  3.0f,  0.0f, 0.0f},
+		{ 1.0f,  0.0f,  0.0f, 0.0f}
+	};
+	UVEC v;
+	float tt = t*t;
+	float ttt = tt*t;
+	v.qv = MTX_calc_qpnt(mbez, V4_set(ttt, tt, t, 1.0f));
+	return pBez->p1*v.f[1] + pBez->p2*v.f[2] + v.f[3];
+}
+
 
 QVEC _GEOM_get_plane_static(QVEC pos, QVEC nrm) {
 	return GEOM_get_plane(pos, nrm);
