@@ -28,6 +28,9 @@ struct _GLOBAL_WORK {
 	int   h;
 	HWND  hWnd;
 	HINSTANCE hInst;
+	SYS_MUTEX gate_lock;
+	SYS_REMOTE_GATEWAY gate;
+	int rc_flg;
 	long frame_start_time;
 	long frame_end_time;
 	long frame_delta_time;
@@ -35,6 +38,33 @@ struct _GLOBAL_WORK {
 } g_wk;
 
 static const TCHAR* s_build_date = _T(__DATE__);
+
+static DWORD APIENTRY Remote_exec(void* pData) {
+	SYS_mutex_enter(&g_wk.gate_lock);
+	g_wk.rc_flg = 1;
+	SYS_mutex_leave(&g_wk.gate_lock);
+	return 0;
+}
+
+static void Remote_apply() {
+	SYS_mutex_enter(&g_wk.gate_lock);
+	/* */
+	SYS_mutex_leave(&g_wk.gate_lock);
+}
+
+static void Remote_init() {
+	SYS_ADDR addr;
+	addr.addr64 = (sys_ui64)&g_wk.gate;
+	SYS_mutex_init(&g_wk.gate_lock);
+	g_wk.gate.code.addr64 = (sys_ui64)Remote_exec;
+	g_wk.gate.data.addr64 = (sys_ui64)SYS_malloc(1024*1024);
+	SYS_remote_init(g_wk.hWnd, addr);
+	g_wk.rc_flg = 0;
+}
+
+static void Remote_reset() {
+	SYS_mutex_reset(&g_wk.gate_lock);
+}
 
 static LRESULT CALLBACK Wnd_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	LRESULT res = 0;
@@ -91,6 +121,7 @@ static void Init() {
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	wc.lpszClassName = cname;
+	wc.cbWndExtra = 16; /* reserve some memory for remote handshake */
 
 	atom = RegisterClassEx(&wc);
 	if (atom) {
@@ -109,6 +140,8 @@ static void Init() {
 		if (g_wk.hWnd) {
 			ShowWindow(g_wk.hWnd, SW_SHOW);
 			UpdateWindow(g_wk.hWnd);
+
+			Remote_init();
 
 			RDR_init(g_wk.hWnd, g_wk.w, g_wk.h, !!CFG_get_i("fullscreen", 0));
 			JOB_sys_init(Wrk_init_func);
@@ -171,6 +204,7 @@ static void Loop() {
 }
 
 static void Reset() {
+	Remote_reset();
 	Data_free();
 	MTL_sys_reset();
 	MDL_sys_reset();
